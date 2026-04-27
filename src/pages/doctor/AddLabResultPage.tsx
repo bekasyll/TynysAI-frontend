@@ -1,13 +1,14 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { FlaskConical, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { doctorsApi } from '../../api/doctors.api';
+import { patientsApi } from '../../api/patients.api';
+import { labResultsApi } from '../../api/medical-records.api';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { useToast } from '../../components/ui/Toast';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import type { LabResultRequest } from '../../types';
 import { LAB_TEST_TYPES } from '../../types';
 
@@ -15,12 +16,11 @@ export default function AddLabResultPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const patientId = params.get('patientId') ?? '';
-  const { success, error } = useToast();
   const { t } = useTranslation();
 
   const { data: patients, isLoading } = useQuery({
     queryKey: ['doctor-patients-all'],
-    queryFn: async () => { const r = await doctorsApi.getPatients(0, 100); return r.data.data!; },
+    queryFn: async () => { const r = await patientsApi.list(0, 100); return r.data.data!; },
   });
 
   const { register, handleSubmit, watch, formState: { isSubmitting } } = useForm<LabResultRequest>({
@@ -29,14 +29,14 @@ export default function AddLabResultPage() {
 
   const testType = watch('testType');
 
-  const mutation = useMutation({
-    mutationFn: (data: LabResultRequest) => doctorsApi.addLabResult(data),
-    onSuccess: (_, vars) => {
-      success(t('add_lab.success'));
-      navigate(`/doctor/patients/${vars.patientId}`);
+  const mutation = useApiMutation(
+    (data: LabResultRequest) => labResultsApi.create(data),
+    {
+      successMessage: t('add_lab.success'),
+      errorMessage: t('add_lab.error'),
+      onSuccess: (_, vars) => navigate(`/doctor/patients/${vars.patientId}`),
     },
-    onError: () => error(t('add_lab.error')),
-  });
+  );
 
   if (isLoading) return <PageSpinner />;
 

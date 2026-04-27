@@ -1,38 +1,37 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardList, Plus, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { doctorsApi } from '../../api/doctors.api';
+import { reportsApi } from '../../api/medical-records.api';
 import { SeverityBadge } from '../../components/ui/Badge';
+import EmptyState from '../../components/ui/EmptyState';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Pagination from '../../components/ui/Pagination';
 import Button from '../../components/ui/Button';
-import { useToast } from '../../components/ui/Toast';
 import { format } from 'date-fns';
 import { useDateLocale } from '../../hooks/useDateLocale';
+import { usePagedQuery } from '../../hooks/usePagedQuery';
+import { useApiMutation } from '../../hooks/useApiMutation';
 
 export default function DoctorReportsPage() {
-  const [page, setPage] = useState(0);
   const navigate = useNavigate();
-  const { success, error } = useToast();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['doctor-reports', page],
-    queryFn: async () => { const r = await doctorsApi.getMyReports(page); return r.data.data!; },
-  });
+  const { items, pagination, isLoading } = usePagedQuery(
+    ['doctor-reports'],
+    (p) => reportsApi.listForDoctor(p).then((r) => r.data.data!),
+  );
 
-  const sendMutation = useMutation({
-    mutationFn: (id: string) => doctorsApi.sendReport(id),
-    onSuccess: () => {
-      success(t('doctor_reports.send_success'));
-      queryClient.invalidateQueries({ queryKey: ['doctor-reports'] });
+  const sendMutation = useApiMutation(
+    (id: number) => reportsApi.send(id),
+    {
+      successMessage: t('doctor_reports.send_success'),
+      errorMessage: t('doctor_reports.send_error'),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['doctor-reports'] }),
     },
-    onError: () => error(t('doctor_reports.send_error')),
-  });
+  );
 
   if (isLoading) return <PageSpinner />;
 
@@ -45,11 +44,12 @@ export default function DoctorReportsPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        {data?.content.length === 0 ? (
-          <div className="py-16 text-center">
-            <ClipboardList size={48} className="mx-auto mb-4 text-gray-200" />
-            <p className="text-gray-500 font-medium">{t('doctor_reports.empty')}</p>
-          </div>
+        {items.length === 0 ? (
+          <EmptyState
+            icon={ClipboardList}
+            title={t('doctor_reports.empty')}
+            subtitle={t('doctor_reports.empty_sub')}
+          />
         ) : (
           <>
             <table className="w-full text-sm">
@@ -64,9 +64,9 @@ export default function DoctorReportsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {data?.content.map((r) => (
+                {items.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">{r.patientName ?? '—'}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900">{r.patientName ?? '-'}</td>
                     <td className="px-6 py-4 text-gray-600">{r.finalDiagnosisDisplayName ?? t('disease.' + r.finalDiagnosis)}</td>
                     <td className="px-6 py-4"><SeverityBadge severity={r.severity} /></td>
                     <td className="px-6 py-4 text-gray-500">{format(new Date(r.createdAt), 'd MMM yyyy', { locale: dateLocale })}</td>
@@ -93,13 +93,7 @@ export default function DoctorReportsPage() {
               </tbody>
             </table>
             <div className="px-6 pb-4 pt-2">
-              <Pagination
-                page={data?.page ?? 0}
-                totalPages={data?.totalPages ?? 0}
-                totalElements={data?.totalElements ?? 0}
-                size={data?.size ?? 10}
-                onPageChange={setPage}
-              />
+              <Pagination {...pagination} />
             </div>
           </>
         )}

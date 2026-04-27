@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { usersApi } from '../../api/users.api';
+import { notificationsApi } from '../../api/notifications.api';
 
 interface HeaderProps {
   title: string;
@@ -14,7 +14,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const { data } = useQuery({
     queryKey: ['unread-count'],
     queryFn: async () => {
-      const res = await usersApi.getUnreadCount();
+      const res = await notificationsApi.unreadCount();
       return res.data.data ?? 0;
     },
     refetchInterval: 30_000,

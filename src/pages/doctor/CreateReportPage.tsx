@@ -1,78 +1,102 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { FileText, Send, Brain } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { doctorsApi } from '../../api/doctors.api';
+import { patientsApi } from '../../api/patients.api';
+import { reportsApi } from '../../api/medical-records.api';
+import { appointmentsApi } from '../../api/appointments.api';
+import { xraysApi } from '../../api/xrays.api';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { useToast } from '../../components/ui/Toast';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import type { DiagnosticReportRequest } from '../../types';
 import { DISEASE_TYPES, SEVERITY_TYPES } from '../../types';
+
+interface ReportFormValues {
+  patientId: string;
+  appointmentId?: string;
+  xrayAnalysisId?: string;
+  labResultId?: string;
+  finalDiagnosis: DiagnosticReportRequest['finalDiagnosis'];
+  severity: DiagnosticReportRequest['severity'];
+  clinicalFindings: string;
+  treatmentRecommendations?: string;
+  medicationRecommendations?: string;
+  lifestyleRecommendations?: string;
+  followUpDate?: string;
+  reportText: string;
+  sendToPatient?: boolean;
+}
 
 export default function CreateReportPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const patientId = params.get('patientId') ?? '';
   const appointmentIdParam = params.get('appointmentId') ?? '';
-  const { success, error } = useToast();
   const { t } = useTranslation();
 
   const { data: patients, isLoading } = useQuery({
     queryKey: ['doctor-patients-all'],
-    queryFn: async () => { const r = await doctorsApi.getPatients(0, 100); return r.data.data!; },
-  });
-
-  const { data: labs } = useQuery({
-    queryKey: ['doctor-patient-labs', patientId],
-    queryFn: async () => {
-      if (!patientId) return null;
-      const r = await doctorsApi.getPatientLabResults(patientId, 0, 50);
-      return r.data.data!;
-    },
-    enabled: !!patientId,
+    queryFn: async () => { const r = await patientsApi.list(0, 100); return r.data.data!; },
   });
 
   const { data: appointments } = useQuery({
     queryKey: ['doctor-appointments-accepted', patientId],
     queryFn: async () => {
-      const r = await doctorsApi.getMyAppointments('ACCEPTED', 0, 50);
+      const r = await appointmentsApi.listForDoctor('ACCEPTED', 0, 50);
       return r.data.data!.content.filter((a) => !patientId || a.patientId === patientId);
     },
     enabled: !!patientId,
   });
 
-  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<DiagnosticReportRequest>({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<ReportFormValues>({
     defaultValues: { patientId, appointmentId: appointmentIdParam, severity: 'NONE', sendToPatient: true },
   });
 
   const watchedPatientId = watch('patientId');
 
-  // Auto-set xrayAnalysisId from the linked appointment
-  const linkedAppointment = appointments?.find((a) => a.id === appointmentIdParam);
+  const linkedAppointment = appointments?.find((a) => String(a.id) === appointmentIdParam);
 
   useEffect(() => {
-    if (linkedAppointment?.xrayAnalysisId) {
-      setValue('xrayAnalysisId', linkedAppointment.xrayAnalysisId);
+    if (linkedAppointment?.xrayAnalysisId != null) {
+      setValue('xrayAnalysisId', String(linkedAppointment.xrayAnalysisId));
     }
   }, [linkedAppointment?.xrayAnalysisId]);
 
   const { data: linkedAnalysis } = useQuery({
     queryKey: ['doctor-analysis', linkedAppointment?.xrayAnalysisId],
-    queryFn: async () => { const r = await doctorsApi.getAnalysis(linkedAppointment!.xrayAnalysisId!); return r.data.data!; },
-    enabled: !!linkedAppointment?.xrayAnalysisId,
+    queryFn: async () => { const r = await xraysApi.getDoctorOne(linkedAppointment!.xrayAnalysisId!); return r.data.data!; },
+    enabled: linkedAppointment?.xrayAnalysisId != null,
   });
 
-  const mutation = useMutation({
-    mutationFn: (data: DiagnosticReportRequest) => doctorsApi.createReport(data),
-    onSuccess: (res) => {
-      success(t('create_report.success'));
-      navigate(`/doctor/patients/${res.data.data!.patientId}`);
+  const mutation = useApiMutation(
+    (form: ReportFormValues) => {
+      const req: DiagnosticReportRequest = {
+        patientId: form.patientId,
+        appointmentId: form.appointmentId ? Number(form.appointmentId) : undefined,
+        xrayAnalysisId: form.xrayAnalysisId ? Number(form.xrayAnalysisId) : undefined,
+        labResultId: form.labResultId ? Number(form.labResultId) : undefined,
+        finalDiagnosis: form.finalDiagnosis,
+        severity: form.severity,
+        clinicalFindings: form.clinicalFindings,
+        treatmentRecommendations: form.treatmentRecommendations || undefined,
+        medicationRecommendations: form.medicationRecommendations || undefined,
+        lifestyleRecommendations: form.lifestyleRecommendations || undefined,
+        followUpDate: form.followUpDate || undefined,
+        reportText: form.reportText,
+        sendToPatient: form.sendToPatient,
+      };
+      return reportsApi.create(req);
     },
-    onError: () => error(t('create_report.error')),
-  });
+    {
+      successMessage: t('create_report.success'),
+      errorMessage: t('create_report.error'),
+      onSuccess: (res) => navigate(`/doctor/patients/${res.data.data!.patientId}`),
+    },
+  );
 
   if (isLoading) return <PageSpinner />;
 
@@ -103,7 +127,7 @@ export default function CreateReportPage() {
                   <option value="">{t('create_report.no_appointment')}</option>
                   {appointments.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.patientName}{a.appointmentDate ? ` — ${new Date(a.appointmentDate).toLocaleDateString()}` : ''}{a.patientComplaints ? ` (${a.patientComplaints.slice(0, 40)})` : ''}
+                      {a.patientName}{a.appointmentDate ? ` - ${new Date(a.appointmentDate).toLocaleDateString()}` : ''}{a.patientComplaints ? ` (${a.patientComplaints.slice(0, 40)})` : ''}
                     </option>
                   ))}
                 </select>
@@ -120,7 +144,7 @@ export default function CreateReportPage() {
                   <div>
                     <p className="text-xs text-blue-600">{t('validate.diagnosis_label')}</p>
                     <p className="font-semibold text-gray-900">
-                      {linkedAnalysis.aiPrimaryDiagnosisDisplayName ?? (linkedAnalysis.aiPrimaryDiagnosis ? t('disease.' + linkedAnalysis.aiPrimaryDiagnosis) : '—')}
+                      {linkedAnalysis.aiPrimaryDiagnosisDisplayName ?? (linkedAnalysis.aiPrimaryDiagnosis ? t('disease.' + linkedAnalysis.aiPrimaryDiagnosis) : '-')}
                     </p>
                   </div>
                   {linkedAnalysis.aiConfidence != null && (
@@ -157,19 +181,6 @@ export default function CreateReportPage() {
                 </select>
               </div>
             </div>
-
-
-{watchedPatientId && labs && labs.content.length > 0 && (
-              <div>
-                <label className="form-label">{t('create_report.linked_lab')}</label>
-                <select className="form-input" {...register('labResultId')}>
-                  <option value="">{t('create_report.no_lab')}</option>
-                  {labs.content.map((l) => (
-                    <option key={l.id} value={l.id}>{l.testTypeDisplayName ?? l.testType} — {l.testDate}</option>
-                  ))}
-                </select>
-              </div>
-            )}
 
             <div>
               <label className="form-label">{t('create_report.follow_up')}</label>

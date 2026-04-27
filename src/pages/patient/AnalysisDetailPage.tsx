@@ -2,13 +2,14 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, FileImage, Brain, UserCheck, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { patientsApi } from '../../api/patients.api';
+import { xraysApi } from '../../api/xrays.api';
 import { StatusBadge } from '../../components/ui/Badge';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { format } from 'date-fns';
 import { useDateLocale } from '../../hooks/useDateLocale';
+import { xrayDetailRefetch } from '../../hooks/useXrayAutoRefresh';
 
 export default function AnalysisDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,11 +18,8 @@ export default function AnalysisDetailPage() {
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['analysis', id],
-    queryFn: async () => { const r = await patientsApi.getAnalysis(id!); return r.data.data!; },
-    refetchInterval: (q) => {
-      const status = q.state.data?.status;
-      return (status === 'PENDING' || status === 'PROCESSING') ? 3000 : false;
-    },
+    queryFn: async () => { const r = await xraysApi.getOne(id!); return r.data.data!; },
+    refetchInterval: xrayDetailRefetch,
   });
 
   if (isLoading) return <PageSpinner />;
@@ -41,7 +39,6 @@ export default function AnalysisDetailPage() {
         )}
       </div>
 
-      {/* File info */}
       <Card>
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
@@ -50,7 +47,7 @@ export default function AnalysisDetailPage() {
           <div className="flex-1 min-w-0">
             <h2 className="font-semibold text-gray-900 truncate">{data.originalFileName}</h2>
             <div className="flex items-center gap-3 mt-1 text-sm text-gray-500 flex-wrap">
-              <span>{t('imageType.' + data.imageType)}</span>
+              {data.contentType && <span>{data.contentType}</span>}
               {data.fileSizeBytes && <span>{(data.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>}
               <span>{t('analyses.uploaded_at')}: {format(new Date(data.uploadedAt), 'd MMMM yyyy, HH:mm', { locale: dateLocale })}</span>
             </div>
@@ -63,7 +60,6 @@ export default function AnalysisDetailPage() {
         )}
       </Card>
 
-      {/* Processing state */}
       {(data.status === 'PENDING' || data.status === 'PROCESSING') && (
         <Card>
           <div className="py-8 text-center">
@@ -72,11 +68,19 @@ export default function AnalysisDetailPage() {
             </div>
             <p className="font-semibold text-gray-900">{t('analyses.processing_title')}</p>
             <p className="text-gray-500 text-sm mt-1">{t('analyses.processing_sub')}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              icon={<RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />}
+              onClick={() => refetch()}
+              className="mt-4"
+            >
+              {t('analyses.refresh')}
+            </Button>
           </div>
         </Card>
       )}
 
-      {/* AI Results */}
       {data.aiPrimaryDiagnosis && (
         <Card>
           <div className="flex items-center gap-2 mb-5">
@@ -121,7 +125,6 @@ export default function AnalysisDetailPage() {
         </Card>
       )}
 
-      {/* Doctor validation */}
       {data.validatedByDoctorName && (
         <Card>
           <div className="flex items-center gap-2 mb-4">
@@ -132,7 +135,7 @@ export default function AnalysisDetailPage() {
             <div className="p-4 bg-purple-50 rounded-xl">
               <p className="text-xs text-purple-600 font-medium uppercase tracking-wide mb-1">{t('analyses.doctor_diagnosis')}</p>
               <p className="font-semibold text-gray-900">
-                {data.doctorDiagnosis ? t('disease.' + data.doctorDiagnosis) : '—'}
+                {data.doctorDiagnosis ? t('disease.' + data.doctorDiagnosis) : '-'}
               </p>
             </div>
             <div className="p-4 bg-gray-50 rounded-xl">

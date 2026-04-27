@@ -1,31 +1,30 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Stethoscope, Search, Building2, Clock, BadgeCheck, GraduationCap, Calendar } from 'lucide-react';
+import { Stethoscope, Search, Building2, Clock, BadgeCheck, GraduationCap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { patientsApi } from '../../api/patients.api';
+import { doctorsApi } from '../../api/doctors.api';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Pagination from '../../components/ui/Pagination';
 import Modal from '../../components/ui/Modal';
+import { usePagedQuery } from '../../hooks/usePagedQuery';
 import type { DoctorProfileResponse } from '../../types';
 
 export default function DoctorsListPage() {
-  const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<DoctorProfileResponse | null>(null);
   const { t } = useTranslation();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['available-doctors', page],
-    queryFn: async () => { const r = await patientsApi.getAvailableDoctors(page, 20); return r.data.data!; },
-  });
+  const { items, pagination, isLoading } = usePagedQuery(
+    ['available-doctors'],
+    (p) => doctorsApi.listApproved(p, 20).then((r) => r.data.data!),
+  );
 
   const filtered = search
-    ? data?.content.filter((d) =>
+    ? items.filter((d) =>
         d.fullName.toLowerCase().includes(search.toLowerCase()) ||
         (d.specialization ?? '').toLowerCase().includes(search.toLowerCase()) ||
         (d.hospitalName ?? '').toLowerCase().includes(search.toLowerCase())
       )
-    : data?.content;
+    : items;
 
   if (isLoading) return <PageSpinner />;
 
@@ -41,7 +40,7 @@ export default function DoctorsListPage() {
         />
       </div>
 
-      {filtered?.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="py-20 text-center">
           <Stethoscope size={48} className="mx-auto mb-4 text-gray-200" />
           <p className="text-gray-500 font-medium">{t('doctors_list.empty')}</p>
@@ -49,7 +48,7 @@ export default function DoctorsListPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filtered?.map((d) => (
+            {filtered.map((d) => (
               <div
                 key={d.id}
                 onClick={() => setSelected(d)}
@@ -84,9 +83,6 @@ export default function DoctorsListPage() {
                       <span>{t('doctors_list.experience', { years: d.yearsOfExperience })}</span>
                     </div>
                   )}
-                  {d.workSchedule && (
-                    <p className="text-xs text-gray-400 truncate">{d.workSchedule}</p>
-                  )}
                 </div>
 
                 {d.bio && (
@@ -96,13 +92,7 @@ export default function DoctorsListPage() {
             ))}
           </div>
 
-          <Pagination
-            page={data?.page ?? 0}
-            totalPages={data?.totalPages ?? 0}
-            totalElements={data?.totalElements ?? 0}
-            size={data?.size ?? 20}
-            onPageChange={setPage}
-          />
+          <Pagination {...pagination} />
         </>
       )}
 
@@ -114,7 +104,6 @@ export default function DoctorsListPage() {
       >
         {selected && (
           <div className="p-6 space-y-5">
-            {/* Header */}
             <div className="flex items-center gap-4">
               <div
                 className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold shrink-0"
@@ -125,7 +114,7 @@ export default function DoctorsListPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <p className="font-bold text-gray-900 text-lg">{selected.fullName}</p>
-                  <BadgeCheck size={18} className="text-green-500" title={t('doctors_list.approved')} />
+                  <BadgeCheck size={18} className="text-green-500" />
                 </div>
                 {selected.specialization && (
                   <p className="text-blue-600 font-medium">{selected.specialization}</p>
@@ -136,7 +125,6 @@ export default function DoctorsListPage() {
               </div>
             </div>
 
-            {/* Info grid */}
             <div className="grid grid-cols-1 gap-3">
               {selected.hospitalName && (
                 <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
@@ -165,16 +153,6 @@ export default function DoctorsListPage() {
                   <div>
                     <p className="text-xs text-gray-400 mb-0.5">{t('doctors_list.education')}</p>
                     <p className="text-sm text-gray-800">{selected.education}</p>
-                  </div>
-                </div>
-              )}
-
-              {selected.workSchedule && (
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Calendar size={16} className="text-gray-400 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-xs text-gray-400 mb-0.5">{t('doctors_list.schedule')}</p>
-                    <p className="text-sm text-gray-800">{selected.workSchedule}</p>
                   </div>
                 </div>
               )}

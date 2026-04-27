@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { FlaskConical, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { patientsApi } from '../../api/patients.api';
+import { labResultsApi } from '../../api/medical-records.api';
+import EmptyState from '../../components/ui/EmptyState';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Pagination from '../../components/ui/Pagination';
 import Card from '../../components/ui/Card';
 import { format } from 'date-fns';
 import { useDateLocale } from '../../hooks/useDateLocale';
+import { usePagedQuery } from '../../hooks/usePagedQuery';
 import type { LabResultResponse } from '../../types';
 
 function LabResultCard({ result }: { result: LabResultResponse }) {
@@ -85,34 +86,29 @@ function LabResultCard({ result }: { result: LabResultResponse }) {
 }
 
 export default function LabResultsPage() {
-  const [page, setPage] = useState(0);
   const { t } = useTranslation();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['patient-lab-results', page],
-    queryFn: async () => { const r = await patientsApi.getMyLabResults(page); return r.data.data!; },
-  });
+  const { items, pagination, isLoading } = usePagedQuery(
+    ['patient-lab-results'],
+    (p) => labResultsApi.listForPatient(p).then((r) => r.data.data!),
+  );
 
   if (isLoading) return <PageSpinner />;
 
   return (
     <div className="space-y-4 max-w-3xl mx-auto">
-      {data?.content.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 py-16 text-center">
-          <FlaskConical size={48} className="mx-auto mb-4 text-gray-200" />
-          <p className="text-gray-500 font-medium">{t('lab_results.empty')}</p>
-          <p className="text-gray-400 text-sm mt-1">{t('lab_results.empty_sub')}</p>
+      {items.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200">
+          <EmptyState
+            icon={FlaskConical}
+            title={t('lab_results.empty')}
+            subtitle={t('lab_results.empty_sub')}
+          />
         </div>
       ) : (
         <>
-          {data?.content.map((r) => <LabResultCard key={r.id} result={r} />)}
-          <Pagination
-            page={data?.page ?? 0}
-            totalPages={data?.totalPages ?? 0}
-            totalElements={data?.totalElements ?? 0}
-            size={data?.size ?? 10}
-            onPageChange={setPage}
-          />
+          {items.map((r) => <LabResultCard key={r.id} result={r} />)}
+          <Pagination {...pagination} />
         </>
       )}
     </div>

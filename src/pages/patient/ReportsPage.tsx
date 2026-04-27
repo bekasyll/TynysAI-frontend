@@ -1,39 +1,40 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { FileText, ChevronRight, FileImage } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { patientsApi } from '../../api/patients.api';
+import { reportsApi } from '../../api/medical-records.api';
 import { SeverityBadge } from '../../components/ui/Badge';
+import EmptyState from '../../components/ui/EmptyState';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Pagination from '../../components/ui/Pagination';
 import Card from '../../components/ui/Card';
 import { format } from 'date-fns';
 import { useDateLocale } from '../../hooks/useDateLocale';
+import { usePagedQuery } from '../../hooks/usePagedQuery';
 
 export default function ReportsPage() {
-  const [page, setPage] = useState(0);
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['patient-reports', page],
-    queryFn: async () => { const r = await patientsApi.getMyReports(page); return r.data.data!; },
-  });
+  const { items, pagination, isLoading } = usePagedQuery(
+    ['patient-reports'],
+    (p) => reportsApi.listForPatient(p).then((r) => r.data.data!),
+  );
 
   if (isLoading) return <PageSpinner />;
 
   return (
     <div className="space-y-4 max-w-3xl mx-auto">
-      {data?.content.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 py-16 text-center">
-          <FileText size={48} className="mx-auto mb-4 text-gray-200" />
-          <p className="text-gray-500 font-medium">{t('reports.empty')}</p>
-          <p className="text-gray-400 text-sm mt-1">{t('reports.empty_sub')}</p>
+      {items.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200">
+          <EmptyState
+            icon={FileText}
+            title={t('reports.empty')}
+            subtitle={t('reports.empty_sub')}
+          />
         </div>
       ) : (
         <>
-          {data?.content.map((r) => (
+          {items.map((r) => (
             <Link key={r.id} to={`/patient/reports/${r.id}`}>
               <Card className="hover:border-blue-300 transition-colors cursor-pointer">
                 <div className="flex items-center gap-4">
@@ -49,7 +50,7 @@ export default function ReportsPage() {
                       {t('reports.doctor_label')}: {r.doctorName} · {format(new Date(r.createdAt), 'd MMM yyyy', { locale: dateLocale })}
                       {r.reportNumber && ` · №${r.reportNumber}`}
                     </p>
-                    {r.xrayAnalysisId && (
+                    {r.xrayAnalysisId != null && (
                       <div className="flex items-center gap-1 mt-1 text-xs text-blue-600">
                         <FileImage size={12} />
                         {t('reports.linked_analysis')}
@@ -61,13 +62,7 @@ export default function ReportsPage() {
               </Card>
             </Link>
           ))}
-          <Pagination
-            page={data?.page ?? 0}
-            totalPages={data?.totalPages ?? 0}
-            totalElements={data?.totalElements ?? 0}
-            size={data?.size ?? 10}
-            onPageChange={setPage}
-          />
+          <Pagination {...pagination} />
         </>
       )}
     </div>

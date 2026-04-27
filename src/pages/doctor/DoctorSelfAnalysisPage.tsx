@@ -3,17 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Brain } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { doctorsApi } from '../../api/doctors.api';
+import { xraysApi } from '../../api/xrays.api';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import FileUploadZone from '../../components/ui/FileUploadZone';
 import { useToast } from '../../components/ui/Toast';
 import { getApiError } from '../../lib/api-error';
-import { IMAGE_TYPES } from '../../types';
-import type { ImageType } from '../../types';
 
 interface FormData {
-  imageType: ImageType;
   notes: string;
 }
 
@@ -23,14 +20,12 @@ export default function DoctorSelfAnalysisPage() {
   const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
 
-  const { register, handleSubmit, formState: { isSubmitting } } = useForm<FormData>({
-    defaultValues: { imageType: 'XRAY_CHEST' },
-  });
+  const { register, handleSubmit, formState: { isSubmitting } } = useForm<FormData>();
 
   async function onSubmit(data: FormData) {
     if (!file) { error(t('upload.no_file')); return; }
     try {
-      const res = await doctorsApi.uploadSelfAnalysis(file, data.imageType, data.notes || undefined);
+      const res = await xraysApi.doctorUpload(file, data.notes || undefined);
       success(t('upload.success'));
       navigate(`/doctor/analyses/${res.data.data!.id}/validate`);
     } catch (e: unknown) {
@@ -57,14 +52,6 @@ export default function DoctorSelfAnalysisPage() {
 
         <Card>
           <div className="space-y-4">
-            <div>
-              <label className="form-label">{t('upload.image_type')}</label>
-              <select className="form-input" {...register('imageType')}>
-                {IMAGE_TYPES.map((k) => (
-                  <option key={k} value={k}>{t('imageType.' + k)}</option>
-                ))}
-              </select>
-            </div>
             <div>
               <label className="form-label">{t('upload.notes')}</label>
               <textarea

@@ -1,26 +1,25 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, CalendarDays, FileImage, FlaskConical, FileText,
   Check, X, Brain, UserCheck, CheckCircle, ChevronRight,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { doctorsApi } from '../../api/doctors.api';
+import { appointmentsApi } from '../../api/appointments.api';
+import { xraysApi } from '../../api/xrays.api';
 import { AppointmentStatusBadge, StatusBadge } from '../../components/ui/Badge';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { useToast } from '../../components/ui/Toast';
 import { useDateLocale } from '../../hooks/useDateLocale';
-import { getApiError } from '../../lib/api-error';
+import { useApiMutation } from '../../hooks/useApiMutation';
 
 export default function AppointmentDetailPage() {
   const { appointmentId } = useParams<{ appointmentId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { success, error } = useToast();
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
 
@@ -29,13 +28,13 @@ export default function AppointmentDetailPage() {
 
   const { data: appt, isLoading } = useQuery({
     queryKey: ['doctor-appointment', appointmentId],
-    queryFn: async () => { const r = await doctorsApi.getAppointment(appointmentId!); return r.data.data!; },
+    queryFn: async () => { const r = await appointmentsApi.getForDoctor(appointmentId!); return r.data.data!; },
   });
 
   const { data: analysis } = useQuery({
     queryKey: ['doctor-analysis', appt?.xrayAnalysisId],
-    queryFn: async () => { const r = await doctorsApi.getAnalysis(appt!.xrayAnalysisId!); return r.data.data!; },
-    enabled: !!appt?.xrayAnalysisId,
+    queryFn: async () => { const r = await xraysApi.getDoctorOne(appt!.xrayAnalysisId!); return r.data.data!; },
+    enabled: appt?.xrayAnalysisId != null,
   });
 
   function invalidate() {
@@ -45,21 +44,23 @@ export default function AppointmentDetailPage() {
     setNotes('');
   }
 
-  const acceptMutation = useMutation({
-    mutationFn: () => doctorsApi.acceptAppointment(appointmentId!, {
-      doctorNotes: notes || undefined,
-    }),
-    onSuccess: () => { success(t('doctor_appointments.accept_success')); invalidate(); },
-    onError: (e: unknown) => {
-      error(getApiError(e) ?? t('doctor_appointments.accept_error'));
+  const acceptMutation = useApiMutation(
+    () => appointmentsApi.accept(appointmentId!, { doctorNotes: notes || undefined }),
+    {
+      successMessage: t('doctor_appointments.accept_success'),
+      errorMessage: t('doctor_appointments.accept_error'),
+      onSuccess: invalidate,
     },
-  });
+  );
 
-  const rejectMutation = useMutation({
-    mutationFn: () => doctorsApi.rejectAppointment(appointmentId!, { doctorNotes: notes || undefined }),
-    onSuccess: () => { success(t('doctor_appointments.reject_success')); invalidate(); },
-    onError: () => error(t('doctor_appointments.reject_error')),
-  });
+  const rejectMutation = useApiMutation(
+    () => appointmentsApi.reject(appointmentId!, { doctorNotes: notes || undefined }),
+    {
+      successMessage: t('doctor_appointments.reject_success'),
+      errorMessage: t('doctor_appointments.reject_error'),
+      onSuccess: invalidate,
+    },
+  );
 
   if (isLoading) return <PageSpinner />;
   if (!appt) return <div className="text-center py-16 text-gray-400">{t('common.not_found')}</div>;
@@ -68,14 +69,12 @@ export default function AppointmentDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" icon={<ArrowLeft size={14} />} onClick={() => navigate('/doctor/appointments')}>
           {t('common.back')}
         </Button>
       </div>
 
-      {/* Appointment info card */}
       <Card>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
@@ -86,7 +85,7 @@ export default function AppointmentDetailPage() {
               {(appt.patientName ?? '?').charAt(0).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">{appt.patientName ?? '—'}</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{appt.patientName ?? '-'}</h2>
               {appt.appointmentDate && (
                 <div className="flex items-center gap-1.5 text-sm text-gray-500 mt-0.5">
                   <CalendarDays size={14} />
@@ -113,7 +112,6 @@ export default function AppointmentDetailPage() {
         )}
       </Card>
 
-      {/* PENDING: Accept / Reject */}
       {appt.status === 'PENDING' && (
         <Card>
           <h3 className="font-semibold text-gray-900 mb-4">{t('appointment_detail.decision_title')}</h3>
@@ -161,13 +159,11 @@ export default function AppointmentDetailPage() {
         </Card>
       )}
 
-      {/* ACCEPTED: Services */}
       {appt.status === 'ACCEPTED' && (
         <Card>
-          {/* Secondary services */}
           <h3 className="font-semibold text-gray-900 mb-3">{t('appointment_detail.services_section')}</h3>
           <div className="flex flex-wrap gap-2 mb-5">
-            {appt.xrayAnalysisId && (
+            {appt.xrayAnalysisId != null && (
               <button
                 onClick={() => navigate(`/doctor/analyses/${appt.xrayAnalysisId}/validate`)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors text-sm font-medium text-blue-700"
@@ -185,7 +181,6 @@ export default function AppointmentDetailPage() {
             </button>
           </div>
 
-          {/* Complete appointment — primary action */}
           <div className="border-t border-gray-100 pt-4">
             <p className="text-xs text-gray-400 mb-2">{t('appointment_detail.complete_hint')}</p>
             <button
@@ -206,12 +201,11 @@ export default function AppointmentDetailPage() {
         </Card>
       )}
 
-      {/* COMPLETED */}
       {appt.status === 'COMPLETED' && (
         <div className="flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">
           <CheckCircle size={16} />
           {t('appointment_detail.completed_info')}
-          {appt.reportId && (
+          {appt.reportId != null && (
             <button
               onClick={() => navigate(`/doctor/reports/${appt.reportId}`)}
               className="ml-auto underline font-medium"
@@ -222,7 +216,6 @@ export default function AppointmentDetailPage() {
         </div>
       )}
 
-      {/* Linked X-ray AI results */}
       {analysis && (
         <Card>
           <div className="flex items-center gap-2 mb-4">
@@ -231,21 +224,11 @@ export default function AppointmentDetailPage() {
             <div className="ml-auto"><StatusBadge status={analysis.status} /></div>
           </div>
 
-          {analysis.imageBase64 && (
-            <div className="mb-4 rounded-xl overflow-hidden border border-gray-200 bg-black flex items-center justify-center">
-              <img
-                src={analysis.imageBase64}
-                alt={analysis.originalFileName}
-                className="max-h-72 w-full object-contain"
-              />
-            </div>
-          )}
-
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="p-3 bg-blue-50 rounded-xl">
               <p className="text-xs text-blue-600 font-medium uppercase tracking-wide mb-1">{t('validate.diagnosis_label')}</p>
               <p className="font-semibold text-gray-900 text-sm">
-                {analysis.aiPrimaryDiagnosis ? t('disease.' + analysis.aiPrimaryDiagnosis) : '—'}
+                {analysis.aiPrimaryDiagnosis ? t('disease.' + analysis.aiPrimaryDiagnosis) : '-'}
               </p>
             </div>
             {confidence != null && (

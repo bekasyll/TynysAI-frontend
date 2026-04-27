@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Users, ClipboardList, FileImage, AlertTriangle, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { doctorsApi } from '../../api/doctors.api';
+import { patientsApi } from '../../api/patients.api';
+import { reportsApi } from '../../api/medical-records.api';
 import { StatCard } from '../../components/ui/Card';
 import { SeverityBadge } from '../../components/ui/Badge';
 import { PageSpinner } from '../../components/ui/Spinner';
@@ -15,17 +17,17 @@ export default function DoctorDashboard() {
 
   const { data: patientsData, isLoading: lP } = useQuery({
     queryKey: ['doctor-patients', 0],
-    queryFn: async () => { const r = await doctorsApi.getPatients(0, 5); return r.data.data!; },
+    queryFn: async () => { const r = await patientsApi.list(0, 5); return r.data.data!; },
   });
 
   const { data: reportsData, isLoading: lR } = useQuery({
     queryKey: ['doctor-reports-preview'],
-    queryFn: async () => { const r = await doctorsApi.getMyReports(0, 10); return r.data.data!; },
+    queryFn: async () => { const r = await reportsApi.listForDoctor(0, 10); return r.data.data!; },
   });
 
   const { data: profile } = useQuery({
     queryKey: ['doctor-profile'],
-    queryFn: async () => { const r = await doctorsApi.getMyProfile(); return r.data.data!; },
+    queryFn: async () => { const r = await doctorsApi.getMe(); return r.data.data!; },
   });
 
   if (lP || lR) return <PageSpinner />;
@@ -45,7 +47,7 @@ export default function DoctorDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard title={t('dashboard.patients_title')} value={patientsData?.totalElements ?? 0} icon={<Users size={22} />} color="blue" />
         <StatCard title={t('dashboard.reports_count')} value={reportsData?.totalElements ?? 0} icon={<ClipboardList size={22} />} color="green" />
-        <StatCard title={t('dashboard.specialization')} value={profile?.specialization ?? '—'} icon={<FileImage size={22} />} color="purple" />
+        <StatCard title={t('dashboard.specialization')} value={profile?.specialization ?? '-'} icon={<FileImage size={22} />} color="purple" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -62,7 +64,7 @@ export default function DoctorDashboard() {
           ) : (
             <div className="divide-y divide-gray-50">
               {patientsData?.content.map((p) => (
-                <Link key={p.id} to={`/doctor/patients/${p.id}`} className="flex items-center gap-3 px-6 py-3.5 hover:bg-gray-50 transition-colors">
+                <Link key={p.userId} to={`/doctor/patients/${p.userId}`} className="flex items-center gap-3 px-6 py-3.5 hover:bg-gray-50 transition-colors">
                   <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0">
                     {p.fullName.charAt(0)}
                   </div>

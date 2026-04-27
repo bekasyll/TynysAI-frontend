@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { CalendarDays, Plus, X, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -7,14 +7,18 @@ import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameDay, isBefore, startOfDay, addMonths, subMonths,
 } from 'date-fns';
-import { patientsApi } from '../../api/patients.api';
+import { appointmentsApi } from '../../api/appointments.api';
+import { doctorsApi } from '../../api/doctors.api';
+import { xraysApi } from '../../api/xrays.api';
 import { AppointmentStatusBadge } from '../../components/ui/Badge';
+import EmptyState from '../../components/ui/EmptyState';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Pagination from '../../components/ui/Pagination';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
-import { useToast } from '../../components/ui/Toast';
 import { useDateLocale } from '../../hooks/useDateLocale';
+import { usePagedQuery } from '../../hooks/usePagedQuery';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import type { AppointmentRequest, AppointmentStatus } from '../../types';
 
 const FILTERS: (AppointmentStatus | 'ALL')[] = ['ALL', 'PENDING', 'ACCEPTED', 'COMPLETED', 'CANCELLED'];
@@ -25,41 +29,45 @@ const TIME_SLOTS = Array.from({ length: 18 }, (_, i) => {
   return `${String(h).padStart(2, '0')}:${m}`;
 });
 
+interface BookFormValues {
+  doctorId: string;
+  appointmentDate?: string;
+  patientComplaints?: string;
+  xrayAnalysisId?: string;
+}
+
 export default function AppointmentsPage() {
-  const [page, setPage] = useState(0);
   const [filter, setFilter] = useState<AppointmentStatus | 'ALL'>('ALL');
   const [showForm, setShowForm] = useState(false);
 
-  // Calendar state
   const [calMonth, setCalMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
-  const { success, error } = useToast();
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
 
   const status = filter === 'ALL' ? undefined : filter;
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['patient-appointments', filter, page],
-    queryFn: async () => { const r = await patientsApi.getMyAppointments(status, page); return r.data.data!; },
-  });
+  const { items, pagination, isLoading, setPage } = usePagedQuery(
+    ['patient-appointments', filter],
+    (p) => appointmentsApi.listForPatient(status, p).then((r) => r.data.data!),
+  );
 
   const { data: doctorsData } = useQuery({
     queryKey: ['available-doctors'],
-    queryFn: async () => { const r = await patientsApi.getAvailableDoctors(0, 100); return r.data.data!; },
+    queryFn: async () => { const r = await doctorsApi.listApproved(0, 100); return r.data.data!; },
     enabled: showForm,
   });
 
   const { data: analysesData } = useQuery({
     queryKey: ['patient-analyses-all'],
-    queryFn: async () => { const r = await patientsApi.getMyAnalyses(0, 50); return r.data.data!; },
+    queryFn: async () => { const r = await xraysApi.listForPatient(0, 50); return r.data.data!; },
     enabled: showForm,
   });
 
-  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<AppointmentRequest>();
+  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<BookFormValues>();
 
   function selectDateTime(date: Date | null, time: string | null) {
     if (date && time) {
@@ -90,26 +98,35 @@ export default function AppointmentsPage() {
     setCalMonth(new Date());
   }
 
-  const bookMutation = useMutation({
-    mutationFn: (data: AppointmentRequest) => patientsApi.bookAppointment(data),
-    onSuccess: () => {
-      success(t('appointments.success'));
-      queryClient.invalidateQueries({ queryKey: ['patient-appointments'] });
-      closeForm();
+  const bookMutation = useApiMutation(
+    (form: BookFormValues) => {
+      const req: AppointmentRequest = {
+        doctorId: form.doctorId,
+        appointmentDate: form.appointmentDate || undefined,
+        patientComplaints: form.patientComplaints || undefined,
+        xrayAnalysisId: form.xrayAnalysisId ? Number(form.xrayAnalysisId) : undefined,
+      };
+      return appointmentsApi.book(req);
     },
-    onError: () => error(t('appointments.book_error')),
-  });
-
-  const cancelMutation = useMutation({
-    mutationFn: (id: string) => patientsApi.cancelAppointment(id),
-    onSuccess: () => {
-      success(t('appointments.cancel_success'));
-      queryClient.invalidateQueries({ queryKey: ['patient-appointments'] });
+    {
+      successMessage: t('appointments.success'),
+      errorMessage: t('appointments.book_error'),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['patient-appointments'] });
+        closeForm();
+      },
     },
-    onError: () => error(t('appointments.cancel_error')),
-  });
+  );
 
-  // Calendar helpers
+  const cancelMutation = useApiMutation(
+    (id: number) => appointmentsApi.cancel(id),
+    {
+      successMessage: t('appointments.cancel_success'),
+      errorMessage: t('appointments.cancel_error'),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['patient-appointments'] }),
+    },
+  );
+
   const today = startOfDay(new Date());
   const monthStart = startOfMonth(calMonth);
   const monthEnd = endOfMonth(calMonth);
@@ -153,28 +170,24 @@ export default function AppointmentsPage() {
           </div>
 
           <form onSubmit={handleSubmit((d) => bookMutation.mutate(d))} className="space-y-5">
-            {/* Doctor select */}
             <div>
               <label className="form-label">{t('appointments.choose_doctor')}</label>
               <select className="form-input" {...register('doctorId', { required: t('common.required') })}>
                 <option value="">{t('appointments.choose_doctor')}</option>
                 {doctorsData?.content.map((d) => (
                   <option key={d.userId} value={d.userId}>
-                    {d.fullName}{d.specialization ? ` — ${d.specialization}` : ''}
+                    {d.fullName}{d.specialization ? ` - ${d.specialization}` : ''}
                   </option>
                 ))}
               </select>
               {errors.doctorId && <p className="form-error">{errors.doctorId.message}</p>}
             </div>
 
-            {/* Date + Time picker */}
             <div>
               <label className="form-label mb-3">{t('appointments.date_label')}</label>
               <div className="flex flex-col lg:flex-row gap-4">
 
-                {/* Calendar */}
                 <div className="bg-gray-50 rounded-xl p-4 flex-shrink-0">
-                  {/* Month nav */}
                   <div className="flex items-center justify-between mb-3">
                     <button
                       type="button"
@@ -195,7 +208,6 @@ export default function AppointmentsPage() {
                     </button>
                   </div>
 
-                  {/* Weekday headers */}
                   <div className="grid grid-cols-7 mb-1">
                     {weekDayLabels.map((d, i) => (
                       <div key={i} className="text-center text-xs font-medium text-gray-400 py-1 uppercase">
@@ -204,7 +216,6 @@ export default function AppointmentsPage() {
                     ))}
                   </div>
 
-                  {/* Day cells */}
                   <div className="grid grid-cols-7 gap-0.5">
                     {calDays.map((day) => {
                       const isCurrentMonth = day.getMonth() === calMonth.getMonth();
@@ -237,7 +248,6 @@ export default function AppointmentsPage() {
                   </div>
                 </div>
 
-                {/* Time slots */}
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-3">
                     <Clock size={14} className="text-gray-400" />
@@ -268,7 +278,6 @@ export default function AppointmentsPage() {
                 </div>
               </div>
 
-              {/* Selected summary */}
               {selectedDate && selectedTime && (
                 <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
                   <CalendarDays size={14} />
@@ -276,11 +285,9 @@ export default function AppointmentsPage() {
                 </div>
               )}
 
-              {/* Hidden field */}
               <input type="hidden" {...register('appointmentDate')} />
             </div>
 
-            {/* Complaints */}
             <div>
               <label className="form-label">{t('appointments.complaints_label')}</label>
               <textarea
@@ -291,7 +298,6 @@ export default function AppointmentsPage() {
               />
             </div>
 
-            {/* Link AI analysis result */}
             <div>
               <label className="form-label">{t('appointments.link_analysis')}</label>
               <select className="form-input" {...register('xrayAnalysisId')}>
@@ -323,12 +329,12 @@ export default function AppointmentsPage() {
 
       {isLoading ? <PageSpinner /> : (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          {data?.content.length === 0 ? (
-            <div className="py-16 text-center">
-              <CalendarDays size={48} className="mx-auto mb-4 text-gray-200" />
-              <p className="text-gray-500 font-medium">{t('appointments.empty')}</p>
-              <p className="text-sm text-gray-400 mt-1">{t('appointments.empty_desc')}</p>
-            </div>
+          {items.length === 0 ? (
+            <EmptyState
+              icon={CalendarDays}
+              title={t('appointments.empty')}
+              subtitle={t('appointments.empty_desc')}
+            />
           ) : (
             <>
               <table className="w-full text-sm">
@@ -342,18 +348,18 @@ export default function AppointmentsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {data?.content.map((a) => (
+                  {items.map((a) => (
                     <tr key={a.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
-                        <p className="font-medium text-gray-900">{a.doctorName ?? '—'}</p>
+                        <p className="font-medium text-gray-900">{a.doctorName ?? '-'}</p>
                         {a.doctorSpecialization && <p className="text-xs text-gray-400">{a.doctorSpecialization}</p>}
                       </td>
                       <td className="px-6 py-4 text-gray-600">
                         {a.appointmentDate
                           ? format(new Date(a.appointmentDate), 'd MMM yyyy, HH:mm', { locale: dateLocale })
-                          : '—'}
+                          : '-'}
                       </td>
-                      <td className="px-6 py-4 text-gray-600 max-w-[200px] truncate">{a.patientComplaints ?? '—'}</td>
+                      <td className="px-6 py-4 text-gray-600 max-w-[200px] truncate">{a.patientComplaints ?? '-'}</td>
                       <td className="px-6 py-4">
                         <AppointmentStatusBadge status={a.status} />
                         {a.doctorNotes && (
@@ -379,13 +385,7 @@ export default function AppointmentsPage() {
                 </tbody>
               </table>
               <div className="px-6 pb-4 pt-2">
-                <Pagination
-                  page={data?.page ?? 0}
-                  totalPages={data?.totalPages ?? 0}
-                  totalElements={data?.totalElements ?? 0}
-                  size={data?.size ?? 20}
-                  onPageChange={setPage}
-                />
+                <Pagination {...pagination} />
               </div>
             </>
           )}

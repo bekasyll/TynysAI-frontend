@@ -1,38 +1,55 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboard, Upload, FileImage, FlaskConical,
   FileText, User, Users, UserCheck,
-  Bell, LogOut, Stethoscope, ClipboardList, Inbox, BookUser, CalendarDays, Brain,
+  Bell, LogOut, Stethoscope, ClipboardList, Inbox, BookUser, CalendarDays,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/auth.store';
-import { authApi } from '../../api/auth.api';
+import { usersApi } from '../../api/users.api';
 import { setLanguage } from '../../i18n';
 import logoIcon from '../../assets/logo-background-removed.png';
 
 export default function Sidebar() {
-  const { user, clearAuth } = useAuthStore();
-  const navigate = useNavigate();
+  const { user, logout, updateAvatar } = useAuthStore();
   const { t, i18n } = useTranslation();
+
+  // Load avatarPath globally so the sidebar shows the photo on every page,
+  // not only after the user opens their profile. Same query key as the
+  // profile pages - React Query dedupes the request.
+  const { data: meData } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => { const r = await usersApi.getMe(); return r.data.data!; },
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (meData !== undefined) {
+      updateAvatar(meData.avatarPath ?? null);
+    }
+  }, [meData?.avatarPath, updateAvatar]);
 
   const patientNav = [
     { to: '/patient/dashboard', label: t('nav.dashboard'), icon: <LayoutDashboard size={18} /> },
     { to: '/patient/upload', label: t('nav.upload'), icon: <Upload size={18} /> },
     { to: '/patient/analyses', label: t('nav.analyses'), icon: <FileImage size={18} /> },
-    { to: '/patient/appointments', label: t('nav.appointments'), icon: <CalendarDays size={18} /> },
-    { to: '/patient/doctors', label: t('nav.doctors'), icon: <BookUser size={18} /> },
-    { to: '/patient/lab-results', label: t('nav.lab_results'), icon: <FlaskConical size={18} /> },
     { to: '/patient/reports', label: t('nav.reports'), icon: <FileText size={18} /> },
+    { to: '/patient/doctors', label: t('nav.doctors'), icon: <BookUser size={18} /> },
+    { to: '/patient/appointments', label: t('nav.appointments'), icon: <CalendarDays size={18} /> },
+    { to: '/patient/lab-results', label: t('nav.lab_results'), icon: <FlaskConical size={18} /> },
     { to: '/patient/profile', label: t('nav.profile'), icon: <User size={18} /> },
   ];
 
   const doctorNav = [
     { to: '/doctor/dashboard', label: t('nav.dashboard'), icon: <LayoutDashboard size={18} /> },
-    { to: '/doctor/appointments', label: t('nav.appointments'), icon: <CalendarDays size={18} /> },
+    { to: '/doctor/ai-analysis', label: t('nav.upload'), icon: <Upload size={18} /> },
     { to: '/doctor/assigned-analyses', label: t('nav.assigned_analyses'), icon: <Inbox size={18} /> },
-    { to: '/doctor/ai-analysis', label: t('nav.ai_analysis'), icon: <Brain size={18} /> },
-    { to: '/doctor/patients', label: t('nav.patients'), icon: <Users size={18} /> },
     { to: '/doctor/reports', label: t('nav.my_reports'), icon: <ClipboardList size={18} /> },
+    { to: '/doctor/appointments', label: t('nav.appointments'), icon: <CalendarDays size={18} /> },
+    { to: '/doctor/patients', label: t('nav.patients'), icon: <Users size={18} /> },
     { to: '/doctor/profile', label: t('nav.profile'), icon: <Stethoscope size={18} /> },
   ];
 
@@ -53,10 +70,8 @@ export default function Sidebar() {
 
   const langs = ['ru', 'kk', 'en'] as const;
 
-  async function handleLogout() {
-    try { await authApi.logout(); } catch { /* ignore */ }
-    clearAuth();
-    navigate('/login');
+  function handleLogout() {
+    logout();
   }
 
   return (
@@ -78,8 +93,8 @@ export default function Sidebar() {
         <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 ring-2 ring-brand-teal/40"
           style={{ background: 'linear-gradient(135deg, #4664E0, #1CBEAF)' }}
         >
-          {user?.avatarBase64
-            ? <img src={user.avatarBase64} alt="" className="w-full h-full object-cover" />
+          {user?.avatarUrl
+            ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
             : <span className="w-full h-full flex items-center justify-center text-white text-sm font-bold">
                 {user?.fullName?.charAt(0)?.toUpperCase() ?? '?'}
               </span>

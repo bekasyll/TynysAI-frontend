@@ -2,7 +2,8 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Calendar, Brain } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { patientsApi } from '../../api/patients.api';
+import { reportsApi } from '../../api/medical-records.api';
+import { xraysApi } from '../../api/xrays.api';
 import { SeverityBadge, StatusBadge } from '../../components/ui/Badge';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Card from '../../components/ui/Card';
@@ -18,13 +19,13 @@ export default function ReportDetailPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['patient-report', id],
-    queryFn: async () => { const r = await patientsApi.getReport(id!); return r.data.data!; },
+    queryFn: async () => { const r = await reportsApi.getForPatient(id!); return r.data.data!; },
   });
 
   const { data: analysis } = useQuery({
     queryKey: ['patient-analysis', data?.xrayAnalysisId],
-    queryFn: async () => { const r = await patientsApi.getAnalysis(data!.xrayAnalysisId!); return r.data.data!; },
-    enabled: !!data?.xrayAnalysisId,
+    queryFn: async () => { const r = await xraysApi.getOne(data!.xrayAnalysisId!, data!.patientId); return r.data.data!; },
+    enabled: data?.xrayAnalysisId != null,
   });
 
   if (isLoading) return <PageSpinner />;

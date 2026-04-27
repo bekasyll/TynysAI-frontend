@@ -1,5 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { keycloak } from '../lib/keycloak';
 import { useAuthStore } from '../store/auth.store';
+import { notifyToast } from '../components/ui/Toast';
 
 const BASE_URL = '/api';
 
@@ -8,76 +10,49 @@ export const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach access token to every request
-apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = localStorage.getItem('accessToken');
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Attach access token to every request, refreshing it preemptively if it expires within 30s.
+apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  if (keycloak.authenticated) {
+    try {
+      await keycloak.updateToken(30);
+    } catch {
+      // Refresh failed - token chain is dead. Drop session and route to our
+      // own login page (we don't redirect to the Keycloak hosted page anymore).
+      await useAuthStore.getState().logout();
+    }
+    if (keycloak.token && config.headers) {
+      config.headers.Authorization = `Bearer ${keycloak.token}`;
+    }
   }
   return config;
 });
-
-// Token refresh logic
-let isRefreshing = false;
-let failedQueue: Array<{ resolve: (v: string) => void; reject: (e: unknown) => void }> = [];
-
-function processQueue(error: unknown, token: string | null = null) {
-  failedQueue.forEach(({ resolve, reject }) => {
-    if (error) reject(error);
-    else resolve(token!);
-  });
-  failedQueue = [];
-}
 
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (originalRequest.url?.includes('/auth/')) {
-        return Promise.reject(error);
-      }
-
-      if (isRefreshing) {
-        return new Promise<string>((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return apiClient(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
-
+    if (error.response?.status === 401 && !originalRequest._retry && keycloak.authenticated) {
       originalRequest._retry = true;
-      isRefreshing = true;
-
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) {
-        isRefreshing = false;
-        useAuthStore.getState().clearAuth();
-        window.location.replace('/login');
-        return Promise.reject(error);
-      }
-
       try {
-        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
-        const newToken = data.data.accessToken;
-        localStorage.setItem('accessToken', newToken);
-        localStorage.setItem('refreshToken', data.data.refreshToken);
-        apiClient.defaults.headers.common.Authorization = `Bearer ${newToken}`;
-        processQueue(null, newToken);
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return apiClient(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-        useAuthStore.getState().clearAuth();
-        window.location.replace('/login');
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
+        const refreshed = await keycloak.updateToken(-1);
+        if (refreshed && keycloak.token) {
+          originalRequest.headers.Authorization = `Bearer ${keycloak.token}`;
+          return apiClient(originalRequest);
+        }
+      } catch {
+        // fall through to logout
       }
+      useAuthStore.getState().logout();
+    }
+
+    // Surface authorization failures globally so the user understands why the
+    // page is empty (e.g. doctor not yet approved). Pages that already display
+    // their own inline error UI also see the message - duplication is fine and
+    // less confusing than silent failures.
+    if (error.response?.status === 403) {
+      const data = error.response.data as { message?: string } | undefined;
+      notifyToast(data?.message ?? 'Access denied', 'error');
     }
 
     return Promise.reject(error);

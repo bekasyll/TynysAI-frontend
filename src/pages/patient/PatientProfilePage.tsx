@@ -1,29 +1,30 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import { useForm } from 'react-hook-form';
-import { User, Lock, Save } from 'lucide-react';
+import { User, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AvatarUpload from '../../components/ui/AvatarUpload';
+import AccountTab from '../../components/profile/AccountTab';
+import PasswordTab from '../../components/profile/PasswordTab';
 import { patientsApi } from '../../api/patients.api';
 import { usersApi } from '../../api/users.api';
 import { useAuthStore } from '../../store/auth.store';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { useToast } from '../../components/ui/Toast';
 import { GENDER_TYPES, BLOOD_TYPES } from '../../types';
-import type { UpdatePatientProfileRequest, UpdateUserRequest, ChangePasswordRequest } from '../../types';
+import type { UpdatePatientProfileRequest } from '../../types';
 
 export default function PatientProfilePage() {
-  const { user, setAuth, updateAvatar } = useAuthStore();
-  const { success, error } = useToast();
+  const { user, updateAvatar } = useAuthStore();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<'medical' | 'account' | 'password'>('medical');
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['patient-profile'],
-    queryFn: async () => { const r = await patientsApi.getMyProfile(); return r.data.data!; },
+    queryFn: async () => { const r = await patientsApi.getMe(); return r.data.data!; },
   });
 
   const { data: meData } = useQuery({
@@ -34,35 +35,20 @@ export default function PatientProfilePage() {
 
   useEffect(() => {
     if (meData !== undefined) {
-      updateAvatar(meData.avatarBase64 ?? null);
+      updateAvatar(meData.avatarPath ?? null);
     }
-  }, [meData?.avatarBase64]);
+  }, [meData?.avatarPath]);
 
   const profileForm = useForm<UpdatePatientProfileRequest>();
-  const accountForm = useForm<UpdateUserRequest>();
-  const passwordForm = useForm<ChangePasswordRequest>();
 
-  const profileMutation = useMutation({
-    mutationFn: (d: UpdatePatientProfileRequest) => patientsApi.updateMyProfile(d),
-    onSuccess: () => { success(t('profile.updated')); queryClient.invalidateQueries({ queryKey: ['patient-profile'] }); },
-    onError: () => error(t('profile.save_error')),
-  });
-
-  const accountMutation = useMutation({
-    mutationFn: (d: UpdateUserRequest) => usersApi.updateMe(d),
-    onSuccess: (res) => {
-      success(t('profile.account_updated'));
-      const u = res.data.data!;
-      if (user) setAuth({ ...user, fullName: u.fullName, avatarBase64: u.avatarBase64 ?? user.avatarBase64 }, localStorage.getItem('accessToken')!, localStorage.getItem('refreshToken')!);
+  const profileMutation = useApiMutation(
+    (d: UpdatePatientProfileRequest) => patientsApi.updateMe(d),
+    {
+      successMessage: t('profile.updated'),
+      errorMessage: t('profile.save_error'),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['patient-profile'] }),
     },
-    onError: () => error(t('profile.save_error')),
-  });
-
-  const passwordMutation = useMutation({
-    mutationFn: (d: ChangePasswordRequest) => usersApi.changePassword(d),
-    onSuccess: () => { success(t('profile.password_changed')); passwordForm.reset(); },
-    onError: () => error(t('profile.wrong_password')),
-  });
+  );
 
   if (isLoading) return <PageSpinner />;
 
@@ -102,7 +88,14 @@ export default function PatientProfilePage() {
 
       {tab === 'medical' && (
         <Card>
-          <form onSubmit={profileForm.handleSubmit((d) => profileMutation.mutate(d))} className="space-y-4">
+          <form onSubmit={profileForm.handleSubmit((d) => {
+            const cleaned = Object.fromEntries(
+              Object.entries(d).filter(([, v]) =>
+                v !== '' && v !== null && v !== undefined && !(typeof v === 'number' && Number.isNaN(v))
+              )
+            ) as UpdatePatientProfileRequest;
+            profileMutation.mutate(cleaned);
+          })} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="form-label">{t('profile.date_of_birth')}</label>
@@ -113,7 +106,7 @@ export default function PatientProfilePage() {
                 <label className="form-label">{t('profile.gender')}</label>
                 <select className="form-input" defaultValue={profile?.gender ?? ''}
                   {...profileForm.register('gender')}>
-                  <option value="">—</option>
+                  <option value="">-</option>
                   {GENDER_TYPES.map((k) => (
                     <option key={k} value={k}>{t('gender.' + k)}</option>
                   ))}
@@ -123,7 +116,7 @@ export default function PatientProfilePage() {
                 <label className="form-label">{t('profile.blood_type')}</label>
                 <select className="form-input" defaultValue={profile?.bloodType ?? ''}
                   {...profileForm.register('bloodType')}>
-                  <option value="">—</option>
+                  <option value="">-</option>
                   {BLOOD_TYPES.map((k) => (
                     <option key={k} value={k}>{t('bloodType.' + k)}</option>
                   ))}
@@ -189,56 +182,8 @@ export default function PatientProfilePage() {
         </Card>
       )}
 
-      {tab === 'account' && (
-        <Card>
-          <form onSubmit={accountForm.handleSubmit((d) => accountMutation.mutate(d))} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="form-label">{t('profile.first_name')}</label>
-                <input className="form-input" defaultValue={user?.fullName?.split(' ')[0] ?? ''}
-                  {...accountForm.register('firstName', { required: t('common.required') })} />
-              </div>
-              <div>
-                <label className="form-label">{t('profile.last_name')}</label>
-                <input className="form-input" defaultValue={user?.fullName?.split(' ').slice(1).join(' ') ?? ''}
-                  {...accountForm.register('lastName', { required: t('common.required') })} />
-              </div>
-            </div>
-            <div>
-              <label className="form-label">{t('profile.phone')}</label>
-              <input className="form-input" placeholder="+77001234567"
-                defaultValue={profile?.phoneNumber ?? ''}
-                {...accountForm.register('phoneNumber')} />
-            </div>
-            <Button type="submit" icon={<User size={14} />} loading={accountMutation.isPending}>{t('common.save')}</Button>
-          </form>
-        </Card>
-      )}
-
-      {tab === 'password' && (
-        <Card>
-          <form onSubmit={passwordForm.handleSubmit((d) => passwordMutation.mutate(d))} className="space-y-4">
-            <div>
-              <label className="form-label">{t('profile.current_password')}</label>
-              <input type="password" className="form-input"
-                {...passwordForm.register('currentPassword', { required: t('common.required') })} />
-            </div>
-            <div>
-              <label className="form-label">{t('profile.new_password')}</label>
-              <input type="password" className="form-input"
-                {...passwordForm.register('newPassword', {
-                  required: t('common.required'),
-                  minLength: { value: 8, message: t('auth.password_min') },
-                  pattern: { value: /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, message: t('auth.password_pattern') },
-                })} />
-              {passwordForm.formState.errors.newPassword && (
-                <p className="form-error">{passwordForm.formState.errors.newPassword.message}</p>
-              )}
-            </div>
-            <Button type="submit" icon={<Lock size={14} />} loading={passwordMutation.isPending}>{t('profile.change_password')}</Button>
-          </form>
-        </Card>
-      )}
+      {tab === 'account' && <AccountTab submitIcon={<User size={14} />} />}
+      {tab === 'password' && <PasswordTab />}
     </div>
   );
 }

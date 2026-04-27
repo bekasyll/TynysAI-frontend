@@ -1,12 +1,12 @@
 import { useRef, useState, useCallback } from 'react';
 import { Camera, Trash2, Loader2, Check, X } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import ReactCrop, { centerCrop, makeAspectCrop, type Crop, type PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { usersApi } from '../../api/users.api';
 import { useAuthStore } from '../../store/auth.store';
 import { useToast } from './Toast';
+import { useApiMutation } from '../../hooks/useApiMutation';
 
 interface AvatarUploadProps {
   size?: 'md' | 'lg';
@@ -68,21 +68,25 @@ export default function AvatarUpload({ size = 'lg' }: AvatarUploadProps) {
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
 
-  const uploadMutation = useMutation({
-    mutationFn: (file: File) => usersApi.uploadAvatar(file),
-    onSuccess: (res) => {
-      const base64 = res.data.data?.avatarBase64 ?? null;
-      updateAvatar(base64);
-      success(t('avatar.change'));
+  const uploadMutation = useApiMutation(
+    (file: File) => usersApi.uploadAvatar(file),
+    {
+      errorMessage: t('avatar.upload_error'),
+      onSuccess: (res) => {
+        updateAvatar(res.data.data?.avatarPath ?? 'present');
+        success(t('avatar.change'));
+      },
     },
-    onError: () => error(t('avatar.upload_error')),
-  });
+  );
 
-  const deleteMutation = useMutation({
-    mutationFn: () => usersApi.deleteAvatar(),
-    onSuccess: () => { updateAvatar(null); success(t('avatar.delete')); },
-    onError: () => error(t('avatar.delete_error')),
-  });
+  const deleteMutation = useApiMutation(
+    () => usersApi.deleteAvatar(),
+    {
+      successMessage: t('avatar.delete'),
+      errorMessage: t('avatar.delete_error'),
+      onSuccess: () => updateAvatar(null),
+    },
+  );
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -129,7 +133,7 @@ export default function AvatarUpload({ size = 'lg' }: AvatarUploadProps) {
   }
 
   const isLoading = uploadMutation.isPending || deleteMutation.isPending;
-  const avatarSrc = user?.avatarBase64 ?? null;
+  const avatarSrc = user?.avatarUrl ?? null;
   const initial = user?.fullName?.charAt(0)?.toUpperCase() ?? '?';
 
   return (

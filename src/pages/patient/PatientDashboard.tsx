@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { FileImage, FlaskConical, FileText, Upload, ChevronRight, Activity } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { patientsApi } from '../../api/patients.api';
+import { xraysApi } from '../../api/xrays.api';
+import { labResultsApi, reportsApi } from '../../api/medical-records.api';
 import { StatCard } from '../../components/ui/Card';
 import { StatusBadge } from '../../components/ui/Badge';
 import { PageSpinner } from '../../components/ui/Spinner';
@@ -15,31 +16,29 @@ export default function PatientDashboard() {
 
   const { data: analysesData, isLoading: loadingAnalyses } = useQuery({
     queryKey: ['patient-analyses', 0],
-    queryFn: async () => { const r = await patientsApi.getMyAnalyses(0, 5); return r.data.data!; },
+    queryFn: async () => { const r = await xraysApi.listForPatient(0, 5); return r.data.data!; },
   });
 
   const { data: labData, isLoading: loadingLab } = useQuery({
     queryKey: ['patient-lab-results', 0],
-    queryFn: async () => { const r = await patientsApi.getMyLabResults(0, 3); return r.data.data!; },
+    queryFn: async () => { const r = await labResultsApi.listForPatient(0, 3); return r.data.data!; },
   });
 
   const { data: reportsData } = useQuery({
     queryKey: ['patient-reports-preview'],
-    queryFn: async () => { const r = await patientsApi.getMyReports(0, 10); return r.data.data!; },
+    queryFn: async () => { const r = await reportsApi.listForPatient(0, 10); return r.data.data!; },
   });
 
   if (loadingAnalyses || loadingLab) return <PageSpinner />;
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard title={t('dashboard.patient_title')} value={analysesData?.totalElements ?? 0} icon={<FileImage size={22} />} color="blue" />
         <StatCard title={t('dashboard.lab_title')} value={labData?.totalElements ?? 0} icon={<FlaskConical size={22} />} color="green" />
         <StatCard title={t('dashboard.reports_title')} value={reportsData?.totalElements ?? 0} icon={<FileText size={22} />} color="purple" />
       </div>
 
-      {/* Quick action */}
       <Link
         to="/patient/upload"
         className="flex items-center gap-4 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-5 text-white hover:from-blue-700 hover:to-blue-800 transition-colors shadow-md"
@@ -52,7 +51,6 @@ export default function PatientDashboard() {
         <ChevronRight size={20} className="text-blue-200" />
       </Link>
 
-      {/* Recent analyses */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
@@ -89,7 +87,6 @@ export default function PatientDashboard() {
         )}
       </div>
 
-      {/* Recent reports */}
       {(reportsData?.content.length ?? 0) > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">

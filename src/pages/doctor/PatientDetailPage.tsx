@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, FileImage, FlaskConical, FileText, Plus, UserCheck, Upload } from 'lucide-react';
+import { ArrowLeft, FileImage, FlaskConical, FileText, Plus, UserCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { doctorsApi } from '../../api/doctors.api';
+import { patientsApi } from '../../api/patients.api';
+import { xraysApi } from '../../api/xrays.api';
+import { reportsApi } from '../../api/medical-records.api';
 import { StatusBadge, SeverityBadge } from '../../components/ui/Badge';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Card from '../../components/ui/Card';
@@ -16,26 +18,32 @@ export default function PatientDetailPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
-  const [tab, setTab] = useState<'analyses' | 'labs' | 'reports'>('analyses');
+  const [tab, setTab] = useState<'analyses' | 'reports'>('analyses');
 
   const { data: patient, isLoading: lP } = useQuery({
     queryKey: ['doctor-patient', patientId],
-    queryFn: async () => { const r = await doctorsApi.getPatient(patientId!); return r.data.data!; },
+    queryFn: async () => { const r = await patientsApi.getByUserId(patientId!); return r.data.data!; },
   });
 
+  // The microservices backend doesn't expose per-patient analyses to a doctor;
+  // we fall back to the doctor's full assigned list and filter locally.
   const { data: analyses } = useQuery({
     queryKey: ['doctor-patient-analyses', patientId],
-    queryFn: async () => { const r = await doctorsApi.getPatientAnalyses(patientId!); return r.data.data!; },
+    queryFn: async () => {
+      const r = await xraysApi.listAssignedToDoctor(0, 100);
+      const all = r.data.data!;
+      return { ...all, content: all.content.filter((a) => a.patientId === patientId) };
+    },
   });
 
-  const { data: labs } = useQuery({
-    queryKey: ['doctor-patient-labs', patientId],
-    queryFn: async () => { const r = await doctorsApi.getPatientLabResults(patientId!); return r.data.data!; },
-  });
-
+  // Same workaround for reports.
   const { data: reports } = useQuery({
     queryKey: ['doctor-patient-reports', patientId],
-    queryFn: async () => { const r = await doctorsApi.getPatientReports(patientId!); return r.data.data!; },
+    queryFn: async () => {
+      const r = await reportsApi.listForDoctor(0, 100);
+      const all = r.data.data!;
+      return { ...all, content: all.content.filter((rep) => rep.patientId === patientId) };
+    },
   });
 
   if (lP) return <PageSpinner />;
@@ -86,13 +94,6 @@ export default function PatientDetailPage() {
           {t('patients.add_lab')}
         </Button>
         <Button
-          icon={<Upload size={14} />}
-          variant="outline"
-          onClick={() => navigate(`/doctor/patients/${patientId}/upload-analysis`)}
-        >
-          {t('patients.upload_xray')}
-        </Button>
-        <Button
           icon={<Plus size={14} />}
           variant="outline"
           onClick={() => navigate(`/doctor/reports/create?patientId=${patientId}`)}
@@ -103,9 +104,8 @@ export default function PatientDetailPage() {
 
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
         {[
-          { key: 'analyses', label: t('patients.tab_analyses', { n: analyses?.totalElements ?? 0 }) },
-          { key: 'labs', label: t('patients.tab_labs', { n: labs?.totalElements ?? 0 }) },
-          { key: 'reports', label: t('patients.tab_reports', { n: reports?.totalElements ?? 0 }) },
+          { key: 'analyses', label: t('patients.tab_analyses', { n: analyses?.totalElements ?? analyses?.content.length ?? 0 }) },
+          { key: 'reports', label: t('patients.tab_reports', { n: reports?.totalElements ?? reports?.content.length ?? 0 }) },
         ].map((tabItem) => (
           <button
             key={tabItem.key}
@@ -138,7 +138,7 @@ export default function PatientDetailPage() {
                 {analyses?.content.map((a) => (
                   <tr key={a.id} className="hover:bg-gray-50">
                     <td className="px-6 py-3 font-medium text-gray-900 truncate max-w-[200px]">{a.originalFileName}</td>
-                    <td className="px-6 py-3 text-gray-600">{a.aiPrimaryDiagnosis ? t('disease.' + a.aiPrimaryDiagnosis) : '—'}</td>
+                    <td className="px-6 py-3 text-gray-600">{a.aiPrimaryDiagnosis ? t('disease.' + a.aiPrimaryDiagnosis) : '-'}</td>
                     <td className="px-6 py-3"><StatusBadge status={a.status} /></td>
                     <td className="px-6 py-3 text-gray-500">{format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}</td>
                     <td className="px-6 py-3">
@@ -151,33 +151,6 @@ export default function PatientDetailPage() {
                         <span className="text-xs text-purple-600 font-medium">{t('patients.validated')}</span>
                       )}
                     </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-
-      {tab === 'labs' && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          {labs?.content.length === 0 ? (
-            <div className="py-10 text-center text-gray-400"><FlaskConical size={32} className="mx-auto mb-2 opacity-40" />{t('patients.no_labs')}</div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_lab_type')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_lab')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_date')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {labs?.content.map((l) => (
-                  <tr key={l.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-3 font-medium text-gray-900">{t('labTest.' + l.testType)}</td>
-                    <td className="px-6 py-3 text-gray-600">{l.labName ?? '—'}</td>
-                    <td className="px-6 py-3 text-gray-500">{format(new Date(l.testDate), 'd MMM yyyy', { locale: dateLocale })}</td>
                   </tr>
                 ))}
               </tbody>

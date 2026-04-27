@@ -25,13 +25,13 @@ import DoctorDashboard from './pages/doctor/DoctorDashboard';
 import PatientsListPage from './pages/doctor/PatientsListPage';
 import PatientDetailPage from './pages/doctor/PatientDetailPage';
 import ValidateAnalysisPage from './pages/doctor/ValidateAnalysisPage';
+import DoctorAnalysisDetailPage from './pages/doctor/AnalysisDetailPage';
 import AddLabResultPage from './pages/doctor/AddLabResultPage';
 import CreateReportPage from './pages/doctor/CreateReportPage';
 import DoctorReportsPage from './pages/doctor/DoctorReportsPage';
 import DoctorProfilePage from './pages/doctor/DoctorProfilePage';
 import AssignedAnalysesPage from './pages/doctor/AssignedAnalysesPage';
 import DoctorAppointmentsPage from './pages/doctor/DoctorAppointmentsPage';
-import DoctorUploadAnalysisPage from './pages/doctor/DoctorUploadAnalysisPage';
 import DoctorSelfAnalysisPage from './pages/doctor/DoctorSelfAnalysisPage';
 import AppointmentDetailPage from './pages/doctor/AppointmentDetailPage';
 
@@ -97,6 +97,7 @@ export default function App() {
         <Route path="/doctor/dashboard" element={<RoleRoute roles={DOCTOR_ADMIN}><DoctorDashboard /></RoleRoute>} />
         <Route path="/doctor/patients" element={<RoleRoute roles={DOCTOR_ADMIN}><PatientsListPage /></RoleRoute>} />
         <Route path="/doctor/patients/:patientId" element={<RoleRoute roles={DOCTOR_ADMIN}><PatientDetailPage /></RoleRoute>} />
+        <Route path="/doctor/analyses/:id" element={<RoleRoute roles={DOCTOR_ADMIN}><DoctorAnalysisDetailPage /></RoleRoute>} />
         <Route path="/doctor/analyses/:analysisId/validate" element={<RoleRoute roles={DOCTOR_ADMIN}><ValidateAnalysisPage /></RoleRoute>} />
         <Route path="/doctor/lab-results/add" element={<RoleRoute roles={DOCTOR_ADMIN}><AddLabResultPage /></RoleRoute>} />
         <Route path="/doctor/reports/create" element={<RoleRoute roles={DOCTOR_ADMIN}><CreateReportPage /></RoleRoute>} />
@@ -104,7 +105,6 @@ export default function App() {
         <Route path="/doctor/assigned-analyses" element={<RoleRoute roles={DOCTOR_ADMIN}><AssignedAnalysesPage /></RoleRoute>} />
         <Route path="/doctor/appointments" element={<RoleRoute roles={DOCTOR_ADMIN}><DoctorAppointmentsPage /></RoleRoute>} />
         <Route path="/doctor/appointments/:appointmentId" element={<RoleRoute roles={DOCTOR_ADMIN}><AppointmentDetailPage /></RoleRoute>} />
-        <Route path="/doctor/patients/:patientId/upload-analysis" element={<RoleRoute roles={DOCTOR_ADMIN}><DoctorUploadAnalysisPage /></RoleRoute>} />
         <Route path="/doctor/ai-analysis" element={<RoleRoute roles={DOCTOR_ADMIN}><DoctorSelfAnalysisPage /></RoleRoute>} />
         <Route path="/doctor/profile" element={<RoleRoute roles={DOCTOR_ADMIN}><DoctorProfilePage /></RoleRoute>} />
 

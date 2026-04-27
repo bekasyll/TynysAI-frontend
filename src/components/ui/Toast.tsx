@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -17,6 +17,17 @@ interface ToastContextValue {
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
+
+/**
+ * Module-level bridge so that non-React code (axios interceptors, Keycloak
+ * callbacks) can show toasts without holding a React context. Populated by
+ * ToastProvider on mount, cleared on unmount.
+ */
+let externalNotify: ((message: string, type: ToastType) => void) | null = null;
+
+export function notifyToast(message: string, type: ToastType = 'info') {
+  externalNotify?.(message, type);
+}
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -38,6 +49,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const success = useCallback((m: string) => toast(m, 'success'), [toast]);
   const error = useCallback((m: string) => toast(m, 'error'), [toast]);
   const warning = useCallback((m: string) => toast(m, 'warning'), [toast]);
+
+  useEffect(() => {
+    externalNotify = (msg, type) => toast(msg, type);
+    return () => { externalNotify = null; };
+  }, [toast]);
 
   const icons: Record<ToastType, React.ReactNode> = {
     success: <CheckCircle size={16} className="text-green-500 shrink-0" />,

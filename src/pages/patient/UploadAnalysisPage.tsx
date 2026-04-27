@@ -4,17 +4,15 @@ import { Upload } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { patientsApi } from '../../api/patients.api';
+import { xraysApi } from '../../api/xrays.api';
+import { doctorsApi } from '../../api/doctors.api';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import FileUploadZone from '../../components/ui/FileUploadZone';
 import { useToast } from '../../components/ui/Toast';
 import { getApiError } from '../../lib/api-error';
-import { IMAGE_TYPES } from '../../types';
-import type { ImageType } from '../../types';
 
 interface FormData {
-  imageType: ImageType;
   notes: string;
   doctorId: string;
 }
@@ -25,18 +23,18 @@ export default function UploadAnalysisPage() {
   const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const { register, handleSubmit, formState: { isSubmitting, errors } } = useForm<FormData>({
-    defaultValues: { imageType: 'XRAY_CHEST', doctorId: '' },
+    defaultValues: { doctorId: '' },
   });
 
   const { data: doctorsData } = useQuery({
     queryKey: ['available-doctors'],
-    queryFn: async () => { const r = await patientsApi.getAvailableDoctors(); return r.data.data!; },
+    queryFn: async () => { const r = await doctorsApi.listApproved(); return r.data.data!; },
   });
 
   async function onSubmit(data: FormData) {
     if (!file) { error(t('upload.no_file')); return; }
     try {
-      const res = await patientsApi.uploadAnalysis(file, data.imageType, data.notes || undefined, data.doctorId);
+      const res = await xraysApi.patientUpload(file, data.notes || undefined, data.doctorId || undefined);
       const id = res.data.data!.id;
       success(t('upload.success'));
       navigate(`/patient/analyses/${id}`);
@@ -75,14 +73,6 @@ export default function UploadAnalysisPage() {
         <Card>
           <div className="space-y-4">
             <div>
-              <label className="form-label">{t('upload.image_type')}</label>
-              <select className="form-input" {...register('imageType')}>
-                {IMAGE_TYPES.map((k) => (
-                  <option key={k} value={k}>{t('imageType.' + k)}</option>
-                ))}
-              </select>
-            </div>
-            <div>
               <label className="form-label">{t('upload.assign_doctor')} <span className="text-red-500">*</span></label>
               <select
                 className={`form-input ${errors.doctorId ? 'border-red-400' : ''}`}
@@ -91,7 +81,7 @@ export default function UploadAnalysisPage() {
                 <option value="">{t('upload.choose_doctor_placeholder')}</option>
                 {doctorsData?.content.map((d) => (
                   <option key={d.userId} value={d.userId}>
-                    {d.fullName}{d.specialization ? ` — ${d.specialization}` : ''}{d.hospitalName ? ` (${d.hospitalName})` : ''}
+                    {d.fullName}{d.specialization ? ` - ${d.specialization}` : ''}{d.hospitalName ? ` (${d.hospitalName})` : ''}
                   </option>
                 ))}
               </select>

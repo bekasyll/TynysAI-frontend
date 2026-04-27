@@ -1,41 +1,39 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Brain, UserCheck, CheckCircle, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { doctorsApi } from '../../api/doctors.api';
+import { xraysApi } from '../../api/xrays.api';
 import { StatusBadge } from '../../components/ui/Badge';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { useToast } from '../../components/ui/Toast';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import { DISEASE_TYPES } from '../../types';
 import type { DoctorValidationRequest } from '../../types';
 
 export default function ValidateAnalysisPage() {
   const { analysisId } = useParams<{ analysisId: string }>();
   const navigate = useNavigate();
-  const { success, error } = useToast();
   const { t } = useTranslation();
 
   const { data: analysis, isLoading } = useQuery({
     queryKey: ['doctor-analysis', analysisId],
-    queryFn: async () => { const r = await doctorsApi.getAnalysis(analysisId!); return r.data.data!; },
+    queryFn: async () => { const r = await xraysApi.getDoctorOne(analysisId!); return r.data.data!; },
   });
 
   const { register, handleSubmit, watch, setValue, formState: { isSubmitting } } = useForm<DoctorValidationRequest>({
     defaultValues: { agreesWithAi: true },
   });
 
-  const mutation = useMutation({
-    mutationFn: (data: DoctorValidationRequest) => doctorsApi.validateAnalysis(analysisId!, data),
-    onSuccess: (res) => {
-      success(t('validate.success'));
-      const patientId = res.data.data!.patientId;
-      navigate(`/doctor/patients/${patientId}`);
+  const mutation = useApiMutation(
+    (data: DoctorValidationRequest) => xraysApi.validate(analysisId!, data),
+    {
+      successMessage: t('validate.success'),
+      errorMessage: t('validate.error'),
+      onSuccess: () => navigate('/doctor/assigned-analyses'),
     },
-    onError: () => error(t('validate.error')),
-  });
+  );
 
   const agreesWithAi = watch('agreesWithAi');
 
@@ -52,16 +50,6 @@ export default function ValidateAnalysisPage() {
           <StatusBadge status={analysis.status} />
         </div>
 
-        {analysis.imageBase64 && (
-          <div className="mb-4 rounded-xl overflow-hidden border border-gray-200 bg-black flex items-center justify-center">
-            <img
-              src={analysis.imageBase64}
-              alt={analysis.originalFileName}
-              className="max-h-96 w-full object-contain"
-            />
-          </div>
-        )}
-
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
             <p className="text-gray-400">{t('validate.file_label')}</p>
@@ -69,7 +57,7 @@ export default function ValidateAnalysisPage() {
           </div>
           <div>
             <p className="text-gray-400">{t('validate.patient_label')}</p>
-            <p className="font-medium text-gray-900">{analysis.patientName ?? '—'}</p>
+            <p className="font-medium text-gray-900">{analysis.patientName ?? '-'}</p>
           </div>
         </div>
       </Card>
@@ -83,7 +71,7 @@ export default function ValidateAnalysisPage() {
           <div className="p-4 bg-blue-50 rounded-xl">
             <p className="text-xs text-blue-600 font-medium uppercase tracking-wide mb-1">{t('validate.diagnosis_label')}</p>
             <p className="font-semibold text-gray-900">
-              {analysis.aiPrimaryDiagnosis ? t('disease.' + analysis.aiPrimaryDiagnosis) : '—'}
+              {analysis.aiPrimaryDiagnosis ? t('disease.' + analysis.aiPrimaryDiagnosis) : '-'}
             </p>
           </div>
           {confidence != null && (

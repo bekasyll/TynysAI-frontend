@@ -9,7 +9,6 @@ export type BloodType =
   | 'O_POSITIVE' | 'O_NEGATIVE';
 
 export type AnalysisStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'REQUIRES_REVIEW' | 'VALIDATED' | 'FAILED';
-export type ImageType = 'XRAY_CHEST' | 'XRAY_OTHER' | 'CT_CHEST' | 'CT_OTHER';
 
 export type DiseaseType =
   | 'NORMAL'
@@ -46,12 +45,18 @@ export type LabTestType =
 export type AppointmentStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
 
 export type NotificationType =
+  | 'APPOINTMENT_REQUESTED'
+  | 'APPOINTMENT_ACCEPTED'
+  | 'APPOINTMENT_REJECTED'
+  | 'APPOINTMENT_CANCELLED'
+  | 'APPOINTMENT_COMPLETED'
+  | 'XRAY_ASSIGNED'
   | 'ANALYSIS_COMPLETED'
   | 'ANALYSIS_REQUIRES_REVIEW'
+  | 'ANALYSIS_VALIDATED'
   | 'REPORT_READY'
   | 'REPORT_UPDATED'
   | 'LAB_RESULT_ADDED'
-  | 'APPOINTMENT_REMINDER'
   | 'DOCTOR_MESSAGE'
   | 'ACCOUNT_VERIFIED'
   | 'SYSTEM';
@@ -75,34 +80,6 @@ export interface PageResponse<T> {
   first: boolean;
 }
 
-// ==================== AUTH ====================
-
-export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  tokenType: string;
-  expiresIn: number;
-  userId: string;
-  email: string;
-  fullName: string;
-  role: Role;
-  avatarBase64?: string;
-}
-
-export interface RegisterRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  phoneNumber?: string;
-  role: Role;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
 // ==================== USER ====================
 
 export interface UserResponse {
@@ -110,43 +87,32 @@ export interface UserResponse {
   email: string;
   firstName: string;
   lastName: string;
+  middleName?: string;
   fullName: string;
   phoneNumber?: string;
   role: Role;
   enabled: boolean;
   emailVerified: boolean;
+  avatarPath?: string;
   createdAt: string;
-  avatarBase64?: string;
 }
 
 export interface UpdateUserRequest {
   firstName?: string;
   lastName?: string;
+  middleName?: string;
   phoneNumber?: string;
-}
-
-export interface ChangePasswordRequest {
-  currentPassword: string;
-  newPassword: string;
-}
-
-export interface CreateUserRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  phoneNumber?: string;
-  role: Role;
 }
 
 // ==================== PATIENT PROFILE ====================
 
 export interface PatientProfileResponse {
-  id: string;
+  id: number;
   userId: string;
   email: string;
   firstName: string;
   lastName: string;
+  middleName?: string;
   fullName: string;
   phoneNumber?: string;
   dateOfBirth?: string;
@@ -189,13 +155,17 @@ export interface UpdatePatientProfileRequest {
 // ==================== DOCTOR PROFILE ====================
 
 export interface DoctorProfileResponse {
-  id: string;
+  id: number;
   userId: string;
   email: string;
   firstName: string;
   lastName: string;
+  middleName?: string;
   fullName: string;
   phoneNumber?: string;
+  dateOfBirth?: string;
+  age?: number;
+  gender?: Gender;
   specialization?: string;
   licenseNumber?: string;
   hospitalName?: string;
@@ -209,6 +179,8 @@ export interface DoctorProfileResponse {
 }
 
 export interface UpdateDoctorProfileRequest {
+  dateOfBirth?: string;
+  gender?: Gender;
   specialization?: string;
   licenseNumber?: string;
   hospitalName?: string;
@@ -222,7 +194,7 @@ export interface UpdateDoctorProfileRequest {
 // ==================== X-RAY ANALYSIS ====================
 
 export interface XrayAnalysisResponse {
-  id: string;
+  id: number;
   patientId: string;
   patientName?: string;
   assignedDoctorId?: string;
@@ -230,14 +202,12 @@ export interface XrayAnalysisResponse {
   originalFileName: string;
   contentType: string;
   fileSizeBytes?: number;
-  imageType: ImageType;
   status: AnalysisStatus;
   aiPrimaryDiagnosis?: DiseaseType;
   aiPrimaryDiagnosisDisplayName?: string;
   aiConfidence?: number;
   aiFindings?: string;
   aiDetectedAbnormalities?: string;
-  aiAllPredictionsJson?: string;
   validatedByDoctorId?: string;
   validatedByDoctorName?: string;
   doctorDiagnosis?: DiseaseType;
@@ -247,7 +217,6 @@ export interface XrayAnalysisResponse {
   patientNotes?: string;
   uploadedAt: string;
   analyzedAt?: string;
-  imageBase64?: string;
 }
 
 export interface DoctorValidationRequest {
@@ -259,7 +228,7 @@ export interface DoctorValidationRequest {
 // ==================== LAB RESULTS ====================
 
 export interface LabResultResponse {
-  id: string;
+  id: number;
   patientId: string;
   patientName?: string;
   addedByDoctorId?: string;
@@ -268,7 +237,6 @@ export interface LabResultResponse {
   testTypeDisplayName?: string;
   testDate: string;
   labName?: string;
-  // CBC
   hemoglobin?: number;
   wbc?: number;
   rbc?: number;
@@ -278,14 +246,12 @@ export interface LabResultResponse {
   lymphocytes?: number;
   monocytes?: number;
   eosinophils?: number;
-  // Inflammatory
   crp?: number;
   esr?: number;
   proCalcitonin?: number;
   ferritin?: number;
   ldh?: number;
   dDimer?: number;
-  // Biochemistry
   glucose?: number;
   creatinine?: number;
   urea?: number;
@@ -294,25 +260,20 @@ export interface LabResultResponse {
   alt?: number;
   ast?: number;
   bilirubin?: number;
-  // Blood gas
   ph?: number;
   pao2?: number;
   paco2?: number;
   hco3?: number;
   spo2?: number;
-  // Spirometry
   fev1?: number;
   fvc?: number;
   fev1FvcRatio?: number;
-  // Culture
   cultureResult?: string;
   pathogenFound?: string;
   sensitivityResult?: string;
-  // TB
   igraResult?: string;
   mantouxResult?: string;
   mantouxInduratMm?: number;
-  // PCR
   pcrResult?: string;
   pcrCtValue?: number;
   notes?: string;
@@ -371,15 +332,15 @@ export interface LabResultRequest {
 // ==================== DIAGNOSTIC REPORT ====================
 
 export interface DiagnosticReportResponse {
-  id: string;
+  id: number;
   reportNumber?: string;
   patientId: string;
   patientName?: string;
   doctorId?: string;
   doctorName?: string;
   doctorSpecialization?: string;
-  xrayAnalysisId?: string;
-  labResultId?: string;
+  xrayAnalysisId?: number;
+  labResultId?: number;
   finalDiagnosis: DiseaseType;
   finalDiagnosisDisplayName?: string;
   severity: Severity;
@@ -398,9 +359,9 @@ export interface DiagnosticReportResponse {
 
 export interface DiagnosticReportRequest {
   patientId: string;
-  appointmentId?: string;
-  xrayAnalysisId?: string;
-  labResultId?: string;
+  appointmentId?: number;
+  xrayAnalysisId?: number;
+  labResultId?: number;
   finalDiagnosis: DiseaseType;
   severity: Severity;
   clinicalFindings: string;
@@ -415,7 +376,7 @@ export interface DiagnosticReportRequest {
 // ==================== APPOINTMENTS ====================
 
 export interface AppointmentResponse {
-  id: string;
+  id: number;
   patientId: string;
   patientName?: string;
   doctorId: string;
@@ -425,8 +386,8 @@ export interface AppointmentResponse {
   appointmentDate?: string;
   patientComplaints?: string;
   doctorNotes?: string;
-  reportId?: string;
-  xrayAnalysisId?: string;
+  reportId?: number;
+  xrayAnalysisId?: number;
   createdAt: string;
   updatedAt?: string;
 }
@@ -435,7 +396,7 @@ export interface AppointmentRequest {
   doctorId: string;
   appointmentDate?: string;
   patientComplaints?: string;
-  xrayAnalysisId?: string;
+  xrayAnalysisId?: number;
 }
 
 export interface AppointmentDecisionRequest {
@@ -446,10 +407,10 @@ export interface AppointmentDecisionRequest {
 // ==================== NOTIFICATIONS ====================
 
 export interface NotificationResponse {
-  id: string;
-  title: string;
-  message: string;
+  id: number;
+  userId: string;
   type: NotificationType;
+  params?: Record<string, string>;
   read: boolean;
   relatedEntityId?: string;
   relatedEntityType?: string;
@@ -466,17 +427,9 @@ export interface AdminStatsResponse {
   activePatients: number;
   activeDoctors: number;
   pendingDoctorApprovals: number;
-  totalAnalyses: number;
-  pendingAnalyses: number;
-  completedAnalyses: number;
-  analysesLast30Days: number;
-  totalReports: number;
-  totalLabResults: number;
-  diseaseDistribution: Record<string, number>;
-  analysesByStatus: Record<string, number>;
 }
 
-// ==================== ENUM ARRAYS (for iteration in dropdowns) ====================
+// ==================== ENUM ARRAYS ====================
 
 export const DISEASE_TYPES: DiseaseType[] = [
   'NORMAL', 'BACTERIAL_PNEUMONIA', 'VIRAL_PNEUMONIA', 'COVID_19', 'TUBERCULOSIS',
@@ -485,8 +438,6 @@ export const DISEASE_TYPES: DiseaseType[] = [
 ];
 
 export const SEVERITY_TYPES: Severity[] = ['NONE', 'MILD', 'MODERATE', 'SEVERE', 'CRITICAL'];
-
-export const IMAGE_TYPES: ImageType[] = ['XRAY_CHEST', 'XRAY_OTHER', 'CT_CHEST', 'CT_OTHER'];
 
 export const LAB_TEST_TYPES: LabTestType[] = [
   'COMPLETE_BLOOD_COUNT', 'BIOCHEMISTRY', 'SPUTUM_CULTURE', 'PCR_COVID', 'PCR_TB',

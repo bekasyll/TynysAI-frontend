@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { keycloak, currentUserFromToken, logoutLocal } from '../lib/keycloak';
+import apiClient from '../api/client';
 import type { Role } from '../types';
 
 interface AuthUser {
@@ -6,62 +8,89 @@ interface AuthUser {
   email: string;
   fullName: string;
   role: Role;
-  avatarBase64?: string;
+  /**
+   * blob:-URL pointing at the locally-fetched avatar binary. We can't use the
+   * raw `/api/users/{id}/avatar` URL on an `<img>` tag because the browser
+   * doesn't attach our Bearer token to image requests, so the gateway would
+   * 401. Instead we fetch the bytes via axios (which does attach the token),
+   * wrap them in a Blob URL and hand that to the component.
+   */
+  avatarUrl?: string;
 }
 
 interface AuthState {
   user: AuthUser | null;
-  accessToken: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => void;
-  updateAvatar: (avatarBase64: string | null) => void;
-  clearAuth: () => void;
+  refresh: () => void;
+  /**
+   * Pass the `avatarPath` returned by `/api/users/me` (or null/undefined when
+   * the user has no avatar). The store fetches the binary, builds a fresh
+   * blob:-URL and revokes the previous one - so an `<img src={user.avatarUrl}>`
+   * just renders.
+   */
+  updateAvatar: (avatarPath: string | null | undefined) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
-function loadFromStorage(): Partial<AuthState> {
-  try {
-    const user = localStorage.getItem('authUser');
-    const accessToken = localStorage.getItem('accessToken');
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (user && accessToken && refreshToken) {
-      return {
-        user: JSON.parse(user) as AuthUser,
-        accessToken,
-        refreshToken,
-        isAuthenticated: true,
-      };
-    }
-  } catch {
-    // ignore
+function snapshotUser(): AuthUser | null {
+  const u = currentUserFromToken();
+  if (!u) return null;
+  const prev = useAuthStore.getState().user;
+  return {
+    id: u.id,
+    email: u.email,
+    fullName: u.fullName,
+    role: u.role as Role,
+    avatarUrl: prev?.id === u.id ? prev?.avatarUrl : undefined,
+  };
+}
+
+function revokeIfBlob(url: string | undefined) {
+  if (url && url.startsWith('blob:')) {
+    URL.revokeObjectURL(url);
   }
-  return { user: null, accessToken: null, refreshToken: null, isAuthenticated: false };
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  ...{ user: null, accessToken: null, refreshToken: null, isAuthenticated: false },
-  ...loadFromStorage(),
+  user: null,
+  isAuthenticated: false,
 
-  setAuth: (user, accessToken, refreshToken) => {
-    localStorage.setItem('authUser', JSON.stringify(user));
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    set({ user, accessToken, refreshToken, isAuthenticated: true });
+  refresh: () => set({ user: snapshotUser(), isAuthenticated: !!keycloak.authenticated }),
+
+  updateAvatar: async (avatarPath) => {
+    const userId = useAuthStore.getState().user?.id;
+    if (!userId) return;
+    const previousUrl = useAuthStore.getState().user?.avatarUrl;
+
+    if (!avatarPath) {
+      revokeIfBlob(previousUrl);
+      set((state) => state.user
+        ? { user: { ...state.user, avatarUrl: undefined } }
+        : state);
+      return;
+    }
+
+    try {
+      const response = await apiClient.get(`/users/${userId}/avatar`, { responseType: 'blob' });
+      const blobUrl = URL.createObjectURL(response.data as Blob);
+      revokeIfBlob(previousUrl);
+      set((state) => state.user
+        ? { user: { ...state.user, avatarUrl: blobUrl } }
+        : state);
+    } catch {
+      // 404 (deleted between getMe and avatar fetch) or 401 - fall back to letter.
+      revokeIfBlob(previousUrl);
+      set((state) => state.user
+        ? { user: { ...state.user, avatarUrl: undefined } }
+        : state);
+    }
   },
 
-  updateAvatar: (avatarBase64) => {
-    set((state) => {
-      if (!state.user) return state;
-      const updated = { ...state.user, avatarBase64: avatarBase64 ?? undefined };
-      localStorage.setItem('authUser', JSON.stringify(updated));
-      return { user: updated };
-    });
-  },
-
-  clearAuth: () => {
-    localStorage.removeItem('authUser');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+  logout: async () => {
+    revokeIfBlob(useAuthStore.getState().user?.avatarUrl);
+    await logoutLocal();
+    set({ user: null, isAuthenticated: false });
+    // Force a clean route - components depending on auth state will redirect.
+    window.location.href = '/login';
   },
 }));
