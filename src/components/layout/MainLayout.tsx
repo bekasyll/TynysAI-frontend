@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Sidebar from './Sidebar';
@@ -7,6 +8,11 @@ export default function MainLayout() {
   const location = useLocation();
   const { t } = useTranslation();
   const path = location.pathname;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [path]);
 
   const pageTitles: Record<string, { title: string; subtitle?: string }> = {
     '/patient/dashboard': { title: t('nav.dashboard'), subtitle: t('dashboard.patient_title') + ' / ' + t('dashboard.lab_title') },
@@ -38,10 +44,14 @@ export default function MainLayout() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col ml-64 min-w-0">
-        <Header title={pageInfo.title} subtitle={pageInfo.subtitle} />
-        <main className="flex-1 overflow-y-auto p-8">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="flex-1 flex flex-col md:ml-64 min-w-0">
+        <Header
+          title={pageInfo.title}
+          subtitle={pageInfo.subtitle}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
           <Outlet />
         </main>
       </div>

@@ -29,11 +29,11 @@ export default function Pagination({ page, totalPages, totalElements, size, onPa
   }
 
   return (
-    <div className="flex items-center justify-between pt-4">
-      <p className="text-sm text-gray-500">
+    <div className="flex items-center justify-between gap-2 pt-4 flex-wrap">
+      <p className="text-xs sm:text-sm text-gray-500 shrink-0">
         {from}–{to} {t('pagination.of')} {totalElements}
       </p>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 flex-wrap">
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 0}

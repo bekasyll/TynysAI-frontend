@@ -62,9 +62,9 @@ export default function DoctorsListPage() {
                     {d.fullName.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{d.fullName}</p>
+                    <p className="font-semibold text-gray-900 break-words">{d.fullName}</p>
                     {d.specialization && (
-                      <p className="text-sm text-blue-600 truncate">{d.specialization}</p>
+                      <p className="text-sm text-blue-600 break-words">{d.specialization}</p>
                     )}
                   </div>
                   <BadgeCheck size={18} className="text-green-500 shrink-0 ml-auto" />
@@ -74,7 +74,7 @@ export default function DoctorsListPage() {
                   {d.hospitalName && (
                     <div className="flex items-center gap-2">
                       <Building2 size={14} className="text-gray-400 shrink-0" />
-                      <span className="truncate">{d.hospitalName}{d.department ? ` · ${d.department}` : ''}</span>
+                      <span className="break-words">{d.hospitalName}{d.department ? ` · ${d.department}` : ''}</span>
                     </div>
                   )}
                   {d.yearsOfExperience != null && (
@@ -111,10 +111,10 @@ export default function DoctorsListPage() {
               >
                 {selected.fullName.charAt(0).toUpperCase()}
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="font-bold text-gray-900 text-lg">{selected.fullName}</p>
-                  <BadgeCheck size={18} className="text-green-500" />
+                  <p className="font-bold text-gray-900 text-lg break-words min-w-0">{selected.fullName}</p>
+                  <BadgeCheck size={18} className="text-green-500 shrink-0" />
                 </div>
                 {selected.specialization && (
                   <p className="text-blue-600 font-medium">{selected.specialization}</p>

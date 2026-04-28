@@ -124,27 +124,34 @@ export default function PatientDetailPage() {
           {analyses?.content.length === 0 ? (
             <div className="py-10 text-center text-gray-400"><FileImage size={32} className="mx-auto mb-2 opacity-40" />{t('patients.no_analyses')}</div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_file')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_ai_diagnosis')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_status')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_date')}</th>
-                  <th className="px-6 py-3"></th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_file')}</th>
+                  <th className="hidden md:table-cell px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_ai_diagnosis')}</th>
+                  <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 w-[100px] sm:w-[130px]">{t('patients.col_status')}</th>
+                  <th className="hidden lg:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[120px]">{t('patients.col_date')}</th>
+                  <th className="px-2 sm:px-6 py-3 w-[44px] sm:w-[120px]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {analyses?.content.map((a) => (
                   <tr key={a.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-3 font-medium text-gray-900 truncate max-w-[200px]">{a.originalFileName}</td>
-                    <td className="px-6 py-3 text-gray-600">{a.aiPrimaryDiagnosis ? t('disease.' + a.aiPrimaryDiagnosis) : '-'}</td>
-                    <td className="px-6 py-3"><StatusBadge status={a.status} /></td>
-                    <td className="px-6 py-3 text-gray-500">{format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}</td>
-                    <td className="px-6 py-3">
+                    <td className="px-3 sm:px-6 py-3">
+                      <div className="font-medium text-gray-900 break-words">{a.originalFileName}</div>
+                      <div className="md:hidden text-xs text-gray-500 break-words">
+                        {a.aiPrimaryDiagnosis ? t('disease.' + a.aiPrimaryDiagnosis) : format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}
+                      </div>
+                    </td>
+                    <td className="hidden md:table-cell px-6 py-3 text-gray-600 break-words">{a.aiPrimaryDiagnosis ? t('disease.' + a.aiPrimaryDiagnosis) : '-'}</td>
+                    <td className="px-2 sm:px-6 py-3"><StatusBadge status={a.status} /></td>
+                    <td className="hidden lg:table-cell px-6 py-3 text-gray-500 break-words">{format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}</td>
+                    <td className="px-2 sm:px-6 py-3 text-right">
                       {(a.status === 'COMPLETED' || a.status === 'REQUIRES_REVIEW') && (
                         <Link to={`/doctor/analyses/${a.id}/validate`}>
-                          <Button size="sm" icon={<UserCheck size={12} />}>{t('patients.validate')}</Button>
+                          <Button size="sm" icon={<UserCheck size={12} />}>
+                            <span className="hidden sm:inline">{t('patients.validate')}</span>
+                          </Button>
                         </Link>
                       )}
                       {a.status === 'VALIDATED' && (
@@ -164,22 +171,30 @@ export default function PatientDetailPage() {
           {reports?.content.length === 0 ? (
             <div className="py-10 text-center text-gray-400"><FileText size={32} className="mx-auto mb-2 opacity-40" />{t('patients.no_reports')}</div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_diagnosis')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_severity')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_date')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_status')}</th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_diagnosis')}</th>
+                  <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 w-[90px] sm:w-[110px]">{t('patients.col_severity')}</th>
+                  <th className="hidden md:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[120px]">{t('patients.col_date')}</th>
+                  <th className="hidden sm:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[100px]">{t('patients.col_status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {reports?.content.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-3 font-medium text-gray-900">{r.finalDiagnosisDisplayName ?? t('disease.' + r.finalDiagnosis)}</td>
-                    <td className="px-6 py-3"><SeverityBadge severity={r.severity} /></td>
-                    <td className="px-6 py-3 text-gray-500">{format(new Date(r.createdAt), 'd MMM yyyy', { locale: dateLocale })}</td>
-                    <td className="px-6 py-3">
+                    <td className="px-3 sm:px-6 py-3">
+                      <div className="font-medium text-gray-900 break-words">{r.finalDiagnosisDisplayName ?? t('disease.' + r.finalDiagnosis)}</div>
+                      <div className="md:hidden text-xs text-gray-500 break-words">{format(new Date(r.createdAt), 'd MMM yyyy', { locale: dateLocale })}</div>
+                      <div className="sm:hidden text-xs mt-0.5">
+                        {r.sentToPatient
+                          ? <span className="text-green-600 font-medium">{t('patients.sent')}</span>
+                          : <span className="text-gray-400">{t('patients.not_sent')}</span>}
+                      </div>
+                    </td>
+                    <td className="px-2 sm:px-6 py-3"><SeverityBadge severity={r.severity} /></td>
+                    <td className="hidden md:table-cell px-6 py-3 text-gray-500 break-words">{format(new Date(r.createdAt), 'd MMM yyyy', { locale: dateLocale })}</td>
+                    <td className="hidden sm:table-cell px-6 py-3">
                       {r.sentToPatient
                         ? <span className="text-xs text-green-600 font-medium">{t('patients.sent')}</span>
                         : <span className="text-xs text-gray-400">{t('patients.not_sent')}</span>}

@@ -54,7 +54,7 @@ export default function UploadAnalysisPage() {
       <Card>
         <h3 className="font-semibold text-gray-900 mb-1">{t('upload.how_title')}</h3>
         <p className="text-sm text-gray-500 mb-4">{t('upload.how_desc')}</p>
-        <div className="grid grid-cols-3 gap-4 text-center">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
           {steps.map((s) => (
             <div key={s.step} className="p-3 bg-blue-50 rounded-lg">
               <div className="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-2">{s.step}</div>

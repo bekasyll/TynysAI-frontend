@@ -16,10 +16,11 @@ import { PageSpinner } from '../../components/ui/Spinner';
 import Pagination from '../../components/ui/Pagination';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
+import Modal from '../../components/ui/Modal';
 import { useDateLocale } from '../../hooks/useDateLocale';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { useApiMutation } from '../../hooks/useApiMutation';
-import type { AppointmentRequest, AppointmentStatus } from '../../types';
+import type { AppointmentRequest, AppointmentResponse, AppointmentStatus } from '../../types';
 
 const FILTERS: (AppointmentStatus | 'ALL')[] = ['ALL', 'PENDING', 'ACCEPTED', 'COMPLETED', 'CANCELLED'];
 
@@ -43,6 +44,7 @@ export default function AppointmentsPage() {
   const [calMonth, setCalMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [selectedAppt, setSelectedAppt] = useState<AppointmentResponse | null>(null);
 
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -337,48 +339,61 @@ export default function AppointmentsPage() {
             />
           ) : (
             <>
-              <table className="w-full text-sm">
+              <table className="w-full text-sm table-fixed">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left font-medium text-gray-500">{t('appointments.col_doctor')}</th>
-                    <th className="px-6 py-3 text-left font-medium text-gray-500">{t('appointments.col_date')}</th>
-                    <th className="px-6 py-3 text-left font-medium text-gray-500">{t('appointments.col_complaints')}</th>
-                    <th className="px-6 py-3 text-left font-medium text-gray-500">{t('appointments.col_status')}</th>
-                    <th className="px-6 py-3"></th>
+                    <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500">{t('appointments.col_doctor')}</th>
+                    <th className="hidden md:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[170px]">{t('appointments.col_date')}</th>
+                    <th className="hidden lg:table-cell px-6 py-3 text-left font-medium text-gray-500">{t('appointments.col_complaints')}</th>
+                    <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 w-[100px] sm:w-[130px]">{t('appointments.col_status')}</th>
+                    <th className="px-2 sm:px-6 py-3 w-[44px] sm:w-[120px]"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {items.map((a) => (
-                    <tr key={a.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-gray-900">{a.doctorName ?? '-'}</p>
-                        {a.doctorSpecialization && <p className="text-xs text-gray-400">{a.doctorSpecialization}</p>}
+                    <tr
+                      key={a.id}
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => setSelectedAppt(a)}
+                    >
+                      <td className="px-3 sm:px-6 py-4">
+                        <p className="font-medium text-gray-900 break-words">{a.doctorName ?? '-'}</p>
+                        {a.doctorSpecialization && <p className="text-xs text-gray-400 break-words">{a.doctorSpecialization}</p>}
+                        <p className="md:hidden text-xs text-gray-500 mt-0.5 break-words">
+                          {a.appointmentDate
+                            ? format(new Date(a.appointmentDate), 'd MMM yyyy, HH:mm', { locale: dateLocale })
+                            : '-'}
+                        </p>
                       </td>
-                      <td className="px-6 py-4 text-gray-600">
+                      <td className="hidden md:table-cell px-6 py-4 text-gray-600 break-words">
                         {a.appointmentDate
                           ? format(new Date(a.appointmentDate), 'd MMM yyyy, HH:mm', { locale: dateLocale })
                           : '-'}
                       </td>
-                      <td className="px-6 py-4 text-gray-600 max-w-[200px] truncate">{a.patientComplaints ?? '-'}</td>
-                      <td className="px-6 py-4">
+                      <td className="hidden lg:table-cell px-6 py-4 text-gray-600 break-words">{a.patientComplaints ?? '-'}</td>
+                      <td className="px-2 sm:px-6 py-4">
                         <AppointmentStatusBadge status={a.status} />
                         {a.doctorNotes && (
-                          <p className="mt-1.5 text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-md px-2 py-1 max-w-[200px]">
+                          <p className="mt-1.5 text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-md px-2 py-1 max-w-[200px] hidden sm:block">
                             {a.doctorNotes}
                           </p>
                         )}
                       </td>
-                      <td className="px-6 py-4">
-                        {a.status === 'PENDING' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            loading={cancelMutation.isPending}
-                            onClick={() => cancelMutation.mutate(a.id)}
-                          >
-                            {t('appointments.cancel_btn')}
-                          </Button>
-                        )}
+                      <td className="px-2 sm:px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-2">
+                          {a.status === 'PENDING' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              loading={cancelMutation.isPending}
+                              onClick={() => cancelMutation.mutate(a.id)}
+                            >
+                              <span className="hidden sm:inline">{t('appointments.cancel_btn')}</span>
+                              <X size={14} className="sm:hidden" />
+                            </Button>
+                          )}
+                          <ChevronRight size={16} className="text-gray-400 sm:hidden" />
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -391,6 +406,60 @@ export default function AppointmentsPage() {
           )}
         </div>
       )}
+
+      <Modal
+        isOpen={!!selectedAppt}
+        onClose={() => setSelectedAppt(null)}
+        title={selectedAppt?.doctorName ?? '-'}
+        size="md"
+      >
+        {selectedAppt && (
+          <div className="p-5 space-y-3 text-sm">
+            {selectedAppt.doctorSpecialization && (
+              <p className="text-xs text-gray-400 -mt-2">{selectedAppt.doctorSpecialization}</p>
+            )}
+            <div className="flex items-start justify-between gap-3">
+              <span className="text-xs text-gray-400 uppercase tracking-wide pt-0.5 shrink-0">{t('appointments.col_status')}</span>
+              <AppointmentStatusBadge status={selectedAppt.status} />
+            </div>
+            <div className="flex items-start justify-between gap-3">
+              <span className="text-xs text-gray-400 uppercase tracking-wide pt-0.5 shrink-0">{t('appointments.col_date')}</span>
+              <span className="text-sm text-gray-900 text-right break-words min-w-0">
+                {selectedAppt.appointmentDate
+                  ? format(new Date(selectedAppt.appointmentDate), 'd MMMM yyyy, HH:mm', { locale: dateLocale })
+                  : '-'}
+              </span>
+            </div>
+            {selectedAppt.patientComplaints && (
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{t('appointments.col_complaints')}</p>
+                <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 whitespace-pre-wrap break-words">{selectedAppt.patientComplaints}</p>
+              </div>
+            )}
+            {selectedAppt.doctorNotes && (
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{t('appointments.doctor_notes') ?? 'Doctor notes'}</p>
+                <p className="text-sm text-blue-700 bg-blue-50 border border-blue-100 rounded-lg p-3 whitespace-pre-wrap break-words">{selectedAppt.doctorNotes}</p>
+              </div>
+            )}
+            {selectedAppt.status === 'PENDING' && (
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  loading={cancelMutation.isPending}
+                  onClick={() => {
+                    cancelMutation.mutate(selectedAppt.id);
+                    setSelectedAppt(null);
+                  }}
+                >
+                  {t('appointments.cancel_btn')}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

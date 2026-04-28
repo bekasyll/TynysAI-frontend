@@ -224,7 +224,7 @@ export default function AppointmentDetailPage() {
             <div className="ml-auto"><StatusBadge status={analysis.status} /></div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div className="p-3 bg-blue-50 rounded-xl">
               <p className="text-xs text-blue-600 font-medium uppercase tracking-wide mb-1">{t('validate.diagnosis_label')}</p>
               <p className="font-semibold text-gray-900 text-sm">

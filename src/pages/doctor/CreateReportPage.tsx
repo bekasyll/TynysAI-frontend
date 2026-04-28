@@ -140,7 +140,7 @@ export default function CreateReportPage() {
                   <Brain size={15} className="text-blue-600 shrink-0" />
                   <p className="text-sm font-medium text-blue-800">{t('create_report.patient_ai_result')}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                   <div>
                     <p className="text-xs text-blue-600">{t('validate.diagnosis_label')}</p>
                     <p className="font-semibold text-gray-900">
@@ -161,7 +161,7 @@ export default function CreateReportPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="form-label">{t('create_report.diagnosis_label')}</label>
                 <select className="form-input" {...register('finalDiagnosis', { required: t('common.required') })}>

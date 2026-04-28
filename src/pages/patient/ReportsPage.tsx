@@ -42,11 +42,11 @@ export default function ReportsPage() {
                     <FileText size={22} className="text-purple-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-semibold text-gray-900">{r.finalDiagnosisDisplayName ?? t('disease.' + r.finalDiagnosis)}</p>
+                    <div className="flex items-center gap-2 mb-1 min-w-0">
+                      <p className="font-semibold text-gray-900 break-words">{r.finalDiagnosisDisplayName ?? t('disease.' + r.finalDiagnosis)}</p>
                       <SeverityBadge severity={r.severity} />
                     </div>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 break-words">
                       {t('reports.doctor_label')}: {r.doctorName} · {format(new Date(r.createdAt), 'd MMM yyyy', { locale: dateLocale })}
                       {r.reportNumber && ` · №${r.reportNumber}`}
                     </p>

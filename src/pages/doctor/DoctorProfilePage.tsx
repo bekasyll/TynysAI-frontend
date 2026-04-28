@@ -77,9 +77,9 @@ export default function DoctorProfilePage() {
       <Card>
         <div className="flex items-center gap-4">
           <AvatarUpload size="lg" />
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">{user?.fullName}</h2>
-            <p className="text-gray-500">{profile?.specialization ?? t('profile.spec_not_set')}</p>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{user?.fullName}</h2>
+            <p className="text-sm sm:text-base text-gray-500 break-words">{profile?.specialization ?? t('profile.spec_not_set')}</p>
             {meData?.phoneNumber && <p className="text-sm text-gray-500">{meData.phoneNumber}</p>}
             <div className="mt-1">
               {profile?.approved
@@ -107,7 +107,7 @@ export default function DoctorProfilePage() {
       {tab === 'profile' && (
         <Card>
           <form onSubmit={profileForm.handleSubmit((d) => profileMutation.mutate(d))} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="form-label">{t('profile.specialization')}</label>
                 <input className="form-input" {...profileForm.register('specialization')} />

@@ -39,14 +39,14 @@ function LabResultCard({ result }: { result: LabResultResponse }) {
 
   return (
     <Card className="mb-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center shrink-0">
             <FlaskConical size={18} className="text-green-600" />
           </div>
-          <div>
-            <p className="font-medium text-gray-900">{t('labTest.' + result.testType)}</p>
-            <p className="text-sm text-gray-500">
+          <div className="min-w-0">
+            <p className="font-medium text-gray-900 break-words">{t('labTest.' + result.testType)}</p>
+            <p className="text-sm text-gray-500 break-words">
               {result.labName && `${result.labName} · `}
               {format(new Date(result.testDate), 'd MMMM yyyy', { locale: dateLocale })}
               {result.addedByDoctorName && ` · ${t('lab_results.doctor_label')}: ${result.addedByDoctorName}`}
@@ -54,7 +54,7 @@ function LabResultCard({ result }: { result: LabResultResponse }) {
           </div>
         </div>
         {fields.length > 0 && (
-          <button onClick={() => setExpanded(!expanded)} className="text-gray-400 hover:text-gray-600 p-1">
+          <button onClick={() => setExpanded(!expanded)} className="text-gray-400 hover:text-gray-600 p-1 shrink-0">
             {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
         )}

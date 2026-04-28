@@ -53,14 +53,14 @@ export default function DoctorAppointmentsPage() {
             />
           ) : (
             <>
-              <table className="w-full text-sm">
+              <table className="w-full text-sm table-fixed">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left font-medium text-gray-500">{t('doctor_appointments.col_patient')}</th>
-                    <th className="px-6 py-3 text-left font-medium text-gray-500">{t('doctor_appointments.col_date')}</th>
-                    <th className="px-6 py-3 text-left font-medium text-gray-500">{t('doctor_appointments.col_complaints')}</th>
-                    <th className="px-6 py-3 text-left font-medium text-gray-500">{t('doctor_appointments.col_status')}</th>
-                    <th className="px-6 py-3"></th>
+                    <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500">{t('doctor_appointments.col_patient')}</th>
+                    <th className="hidden md:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[170px]">{t('doctor_appointments.col_date')}</th>
+                    <th className="hidden lg:table-cell px-6 py-3 text-left font-medium text-gray-500">{t('doctor_appointments.col_complaints')}</th>
+                    <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 w-[100px] sm:w-[130px]">{t('doctor_appointments.col_status')}</th>
+                    <th className="px-2 sm:px-6 py-3 w-[36px] sm:w-[60px]"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -70,15 +70,22 @@ export default function DoctorAppointmentsPage() {
                       className="hover:bg-gray-50 cursor-pointer"
                       onClick={() => navigate(`/doctor/appointments/${appt.id}`)}
                     >
-                      <td className="px-6 py-4 font-medium text-gray-900">{appt.patientName ?? '-'}</td>
-                      <td className="px-6 py-4 text-gray-600">
+                      <td className="px-3 sm:px-6 py-4">
+                        <div className="font-medium text-gray-900 break-words">{appt.patientName ?? '-'}</div>
+                        <div className="md:hidden text-xs text-gray-500 mt-0.5 break-words">
+                          {appt.appointmentDate
+                            ? format(new Date(appt.appointmentDate), 'd MMM yyyy, HH:mm', { locale: dateLocale })
+                            : '-'}
+                        </div>
+                      </td>
+                      <td className="hidden md:table-cell px-6 py-4 text-gray-600 break-words">
                         {appt.appointmentDate
                           ? format(new Date(appt.appointmentDate), 'd MMM yyyy, HH:mm', { locale: dateLocale })
                           : '-'}
                       </td>
-                      <td className="px-6 py-4 text-gray-600 max-w-[200px] truncate">{appt.patientComplaints ?? '-'}</td>
-                      <td className="px-6 py-4"><AppointmentStatusBadge status={appt.status} /></td>
-                      <td className="px-6 py-4 text-gray-400">
+                      <td className="hidden lg:table-cell px-6 py-4 text-gray-600 break-words">{appt.patientComplaints ?? '-'}</td>
+                      <td className="px-2 sm:px-6 py-4"><AppointmentStatusBadge status={appt.status} /></td>
+                      <td className="px-2 sm:px-6 py-4 text-gray-400">
                         <ChevronRight size={16} />
                       </td>
                     </tr>

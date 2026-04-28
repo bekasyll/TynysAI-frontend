@@ -70,7 +70,7 @@ export default function DoctorAnalysisDetailPage() {
             <FileImage size={28} className="text-blue-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="font-semibold text-gray-900 truncate">{data.originalFileName}</h2>
+            <h2 className="font-semibold text-gray-900 break-all">{data.originalFileName}</h2>
             <div className="flex items-center gap-3 mt-1 text-sm text-gray-500 flex-wrap">
               {data.contentType && <span>{data.contentType}</span>}
               {data.fileSizeBytes && <span>{(data.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>}
@@ -144,7 +144,7 @@ export default function DoctorAnalysisDetailPage() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div className="p-4 bg-blue-50 rounded-xl">
               <p className="text-xs text-blue-600 font-medium uppercase tracking-wide mb-1">{t('analyses.diagnosis_label')}</p>
               <p className="font-semibold text-gray-900">{t('disease.' + data.aiPrimaryDiagnosis)}</p>
@@ -190,7 +190,7 @@ export default function DoctorAnalysisDetailPage() {
             <UserCheck size={20} className="text-purple-600" />
             <h3 className="font-semibold text-gray-900">{t('analyses.doctor_conclusion')}</h3>
           </div>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div className="p-4 bg-purple-50 rounded-xl">
               <p className="text-xs text-purple-600 font-medium uppercase tracking-wide mb-1">{t('analyses.doctor_diagnosis')}</p>
               <p className="font-semibold text-gray-900">

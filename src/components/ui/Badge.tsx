@@ -15,7 +15,7 @@ const colorClasses: Record<Color, string> = {
 
 export function Badge({ color = 'gray', children }: { color?: Color; children: React.ReactNode }) {
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClasses[color]}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 ${colorClasses[color]}`}>
       {children}
     </span>
   );

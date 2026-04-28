@@ -63,9 +63,9 @@ export default function PatientProfilePage() {
       <Card>
         <div className="flex items-center gap-4">
           <AvatarUpload size="lg" />
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">{user?.fullName}</h2>
-            <p className="text-gray-500">{user?.email}</p>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{user?.fullName}</h2>
+            <p className="text-sm sm:text-base text-gray-500 break-all">{user?.email}</p>
             {profile?.phoneNumber && <p className="text-sm text-gray-500">{profile.phoneNumber}</p>}
             {profile?.age && <p className="text-sm text-gray-400">{t('profile.age_years', { age: profile.age })}</p>}
           </div>
@@ -96,7 +96,7 @@ export default function PatientProfilePage() {
             ) as UpdatePatientProfileRequest;
             profileMutation.mutate(cleaned);
           })} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="form-label">{t('profile.date_of_birth')}</label>
                 <input type="date" className="form-input" defaultValue={profile?.dateOfBirth ?? ''}
@@ -153,7 +153,7 @@ export default function PatientProfilePage() {
               <textarea className="form-input resize-none" rows={3} defaultValue={profile?.medicalHistory ?? ''}
                 {...profileForm.register('medicalHistory')} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="form-label">{t('profile.emergency_name')}</label>
                 <input className="form-input" defaultValue={profile?.emergencyContactName ?? ''}

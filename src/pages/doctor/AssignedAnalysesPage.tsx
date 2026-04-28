@@ -42,13 +42,13 @@ export default function AssignedAnalysesPage() {
           />
         ) : (
           <>
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('assigned_analyses.col_patient')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('assigned_analyses.col_status')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('assigned_analyses.col_date')}</th>
-                  <th className="px-6 py-3"></th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500">{t('assigned_analyses.col_patient')}</th>
+                  <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 w-[100px] sm:w-[130px]">{t('assigned_analyses.col_status')}</th>
+                  <th className="hidden md:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[130px]">{t('assigned_analyses.col_date')}</th>
+                  <th className="px-2 sm:px-6 py-3 w-[44px] sm:w-[180px]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -58,12 +58,17 @@ export default function AssignedAnalysesPage() {
                     className="hover:bg-gray-50 transition-colors cursor-pointer"
                     onClick={() => navigate(`/doctor/analyses/${a.id}`)}
                   >
-                    <td className="px-6 py-4 font-medium text-gray-900">{a.patientName ?? '-'}</td>
-                    <td className="px-6 py-4"><StatusBadge status={a.status} /></td>
-                    <td className="px-6 py-4 text-gray-500">
+                    <td className="px-3 sm:px-6 py-4">
+                      <div className="font-medium text-gray-900 break-words">{a.patientName ?? '-'}</div>
+                      <div className="md:hidden text-xs text-gray-400 mt-0.5 break-words">
+                        {format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}
+                      </div>
+                    </td>
+                    <td className="px-2 sm:px-6 py-4"><StatusBadge status={a.status} /></td>
+                    <td className="hidden md:table-cell px-6 py-4 text-gray-500">
                       {format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-2 sm:px-6 py-4 text-right">
                       <div className="inline-flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         {(a.status === 'COMPLETED' || a.status === 'REQUIRES_REVIEW') && (
                           <Button
@@ -71,7 +76,7 @@ export default function AssignedAnalysesPage() {
                             icon={<UserCheck size={12} />}
                             onClick={() => navigate(`/doctor/analyses/${a.id}/validate`)}
                           >
-                            {t('assigned_analyses.validate_btn')}
+                            <span className="hidden sm:inline">{t('assigned_analyses.validate_btn')}</span>
                           </Button>
                         )}
                         <Button
@@ -79,9 +84,11 @@ export default function AssignedAnalysesPage() {
                           variant="ghost"
                           icon={<ChevronRight size={14} />}
                           onClick={() => navigate(`/doctor/analyses/${a.id}`)}
+                          className="hidden sm:inline-flex"
                         >
-                          {t('common.open')}
+                          <span className="hidden sm:inline">{t('common.open')}</span>
                         </Button>
+                        <ChevronRight size={16} className="text-gray-400 sm:hidden" />
                       </div>
                     </td>
                   </tr>

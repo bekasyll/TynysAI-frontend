@@ -20,7 +20,7 @@ export function PatientFields({
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="form-label">{t('profile.first_name')} <span className="text-red-500">*</span></label>
           <input className="form-input" {...register('firstName', { required: t('common.required') })} />
@@ -104,7 +104,7 @@ export function DoctorFields({
           {t('register.section_account')}
         </legend>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="form-label">{t('profile.first_name')} <span className="text-red-500">*</span></label>
             <input className="form-input" {...register('firstName', { required: t('common.required') })} />
@@ -175,7 +175,7 @@ export function DoctorFields({
           {t('register.section_professional')}
         </legend>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="form-label">{t('profile.specialization')} <span className="text-red-500">*</span></label>
             <input className="form-input" {...register('specialization', { required: t('common.required') })} />

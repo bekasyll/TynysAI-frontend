@@ -74,7 +74,7 @@ export default function PatientDashboard() {
                   <FileImage size={18} className="text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 text-sm truncate">{a.originalFileName}</p>
+                  <p className="font-medium text-gray-900 text-sm break-all">{a.originalFileName}</p>
                   <p className="text-xs text-gray-500">
                     {format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}
                     {a.aiPrimaryDiagnosis && ` · ${t('disease.' + a.aiPrimaryDiagnosis)}`}

@@ -50,7 +50,7 @@ export default function ValidateAnalysisPage() {
           <StatusBadge status={analysis.status} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div>
             <p className="text-gray-400">{t('validate.file_label')}</p>
             <p className="font-medium text-gray-900">{analysis.originalFileName}</p>
@@ -67,7 +67,7 @@ export default function ValidateAnalysisPage() {
           <Brain size={20} className="text-blue-600" />
           <h3 className="font-semibold text-gray-900">{t('validate.ai_result')}</h3>
         </div>
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div className="p-4 bg-blue-50 rounded-xl">
             <p className="text-xs text-blue-600 font-medium uppercase tracking-wide mb-1">{t('validate.diagnosis_label')}</p>
             <p className="font-semibold text-gray-900">

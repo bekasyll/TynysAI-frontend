@@ -77,36 +77,40 @@ export default function PatientsListPage() {
           />
         ) : (
           <>
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_patient')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_email')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_age')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_blood_type')}</th>
-                  <th className="px-6 py-3"></th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_patient')}</th>
+                  <th className="hidden sm:table-cell px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_email')}</th>
+                  <th className="hidden md:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[90px]">{t('patients.col_age')}</th>
+                  <th className="hidden md:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[110px]">{t('patients.col_blood_type')}</th>
+                  <th className="px-3 sm:px-6 py-3 w-[44px] sm:w-[90px]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((p) => (
                   <tr key={p.userId} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
+                    <td className="px-3 sm:px-6 py-4">
+                      <Link to={`/doctor/patients/${p.userId}`} className="flex items-center gap-3 min-w-0">
                         <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0">
                           {p.fullName.charAt(0)}
                         </div>
-                        <span className="font-medium text-gray-900">{p.fullName}</span>
-                      </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="font-medium text-gray-900 break-words block">{p.fullName}</span>
+                          <span className="sm:hidden text-xs text-gray-500 break-all block">{p.email}</span>
+                        </div>
+                      </Link>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">{p.email}</td>
-                    <td className="px-6 py-4 text-gray-600">{p.age ? t('patients.age_years', { age: p.age }) : '-'}</td>
-                    <td className="px-6 py-4 text-gray-600">{p.bloodType ? t('bloodType.' + p.bloodType) : '-'}</td>
-                    <td className="px-6 py-4">
+                    <td className="hidden sm:table-cell px-6 py-4 text-gray-600 break-all">{p.email}</td>
+                    <td className="hidden md:table-cell px-6 py-4 text-gray-600">{p.age ? t('patients.age_years', { age: p.age }) : '-'}</td>
+                    <td className="hidden md:table-cell px-6 py-4 text-gray-600">{p.bloodType ? t('bloodType.' + p.bloodType) : '-'}</td>
+                    <td className="px-3 sm:px-6 py-4 text-right">
                       <Link
                         to={`/doctor/patients/${p.userId}`}
                         className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm font-medium"
                       >
-                        {t('common.open')} <ChevronRight size={14} />
+                        <span className="hidden sm:inline">{t('common.open')}</span>
+                        <ChevronRight size={16} />
                       </Link>
                     </td>
                   </tr>

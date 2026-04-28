@@ -62,28 +62,33 @@ export default function AnalysesPage() {
           />
         ) : (
           <>
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('analyses.col_file')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('analyses.col_ai_diagnosis')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('analyses.col_status')}</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">{t('analyses.col_date')}</th>
-                  <th className="px-6 py-3"></th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500">{t('analyses.col_file')}</th>
+                  <th className="hidden md:table-cell px-6 py-3 text-left font-medium text-gray-500">{t('analyses.col_ai_diagnosis')}</th>
+                  <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 w-[100px] sm:w-[130px]">{t('analyses.col_status')}</th>
+                  <th className="hidden lg:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[130px]">{t('analyses.col_date')}</th>
+                  <th className="px-2 sm:px-6 py-3 w-[78px] sm:w-[140px]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {items.map((a) => (
                   <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
+                    <td className="px-3 sm:px-6 py-4">
+                      <Link to={`/patient/analyses/${a.id}`} className="flex items-center gap-2 sm:gap-3 min-w-0">
                         <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
                           <FileImage size={16} className="text-blue-600" />
                         </div>
-                        <span className="font-medium text-gray-900 truncate max-w-[180px]">{a.originalFileName}</span>
-                      </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="font-medium text-gray-900 break-all block">{a.originalFileName}</span>
+                          <span className="md:hidden text-xs text-gray-500 break-words block">
+                            {a.aiPrimaryDiagnosis ? t('disease.' + a.aiPrimaryDiagnosis) : format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}
+                          </span>
+                        </div>
+                      </Link>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">
+                    <td className="hidden md:table-cell px-6 py-4 text-gray-600">
                       {a.aiPrimaryDiagnosis ? (
                         <span>{t('disease.' + a.aiPrimaryDiagnosis)}
                           {a.aiConfidence != null && (
@@ -92,12 +97,14 @@ export default function AnalysesPage() {
                         </span>
                       ) : '-'}
                     </td>
-                    <td className="px-6 py-4"><StatusBadge status={a.status} /></td>
-                    <td className="px-6 py-4 text-gray-500">{format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 justify-end">
+                    <td className="px-2 sm:px-6 py-4"><StatusBadge status={a.status} /></td>
+                    <td className="hidden lg:table-cell px-6 py-4 text-gray-500">{format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}</td>
+                    <td className="px-2 sm:px-6 py-4">
+                      <div className="flex items-center gap-1 justify-end">
                         <Link to={`/patient/analyses/${a.id}`}>
-                          <Button variant="ghost" size="sm" icon={<ChevronRight size={14} />}>{t('common.open')}</Button>
+                          <Button variant="ghost" size="sm" icon={<ChevronRight size={14} />}>
+                            <span className="hidden sm:inline">{t('common.open')}</span>
+                          </Button>
                         </Link>
                         <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} className="text-red-400 hover:text-red-600 hover:bg-red-50" onClick={() => setDeleteId(a.id)} />
                       </div>

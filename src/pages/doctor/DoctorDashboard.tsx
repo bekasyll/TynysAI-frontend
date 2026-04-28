@@ -94,7 +94,7 @@ export default function DoctorDashboard() {
               {reportsData?.content.map((r) => (
                 <div key={r.id} className="flex items-center gap-3 px-6 py-3.5">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 text-sm truncate">
+                    <p className="font-medium text-gray-900 text-sm break-words">
                       {r.finalDiagnosisDisplayName ?? t('disease.' + r.finalDiagnosis)}
                     </p>
                     <p className="text-xs text-gray-500">{r.patientName} · {format(new Date(r.createdAt), 'd MMM yyyy', { locale: dateLocale })}</p>

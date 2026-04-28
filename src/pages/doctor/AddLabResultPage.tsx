@@ -66,7 +66,7 @@ export default function AddLabResultPage() {
                 ))}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="form-label">{t('add_lab.test_type')}</label>
                 <select className="form-input" {...register('testType', { required: true })}>
@@ -90,7 +90,7 @@ export default function AddLabResultPage() {
         {testType === 'COMPLETE_BLOOD_COUNT' && (
           <Card>
             <h4 className="font-medium text-gray-900 mb-4">{t('add_lab.cbc_title')}</h4>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {numField('Hemoglobin', 'hemoglobin', 'g/L')}
               {numField('WBC', 'wbc', '×10⁹/L')}
               {numField('RBC', 'rbc', '×10¹²/L')}
@@ -107,7 +107,7 @@ export default function AddLabResultPage() {
         {testType === 'INFLAMMATORY_MARKERS' && (
           <Card>
             <h4 className="font-medium text-gray-900 mb-4">{t('add_lab.inflammatory_title')}</h4>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {numField('CRP', 'crp', 'mg/L')}
               {numField('ESR', 'esr', 'mm/h')}
               {numField('Procalcitonin', 'proCalcitonin', 'ng/mL')}
@@ -121,7 +121,7 @@ export default function AddLabResultPage() {
         {testType === 'BIOCHEMISTRY' && (
           <Card>
             <h4 className="font-medium text-gray-900 mb-4">{t('add_lab.biochem_title')}</h4>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {numField('Glucose', 'glucose', 'mmol/L')}
               {numField('Creatinine', 'creatinine', 'μmol/L')}
               {numField('Urea', 'urea', 'mmol/L')}
@@ -137,7 +137,7 @@ export default function AddLabResultPage() {
         {testType === 'BLOOD_GAS' && (
           <Card>
             <h4 className="font-medium text-gray-900 mb-4">{t('add_lab.blood_gas_title')}</h4>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {numField('pH', 'ph', '')}
               {numField('PaO₂', 'pao2', 'mmHg')}
               {numField('PaCO₂', 'paco2', 'mmHg')}
@@ -150,7 +150,7 @@ export default function AddLabResultPage() {
         {testType === 'SPIROMETRY' && (
           <Card>
             <h4 className="font-medium text-gray-900 mb-4">{t('add_lab.spirometry_title')}</h4>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {numField('FEV1', 'fev1', 'L')}
               {numField('FVC', 'fvc', 'L')}
               {numField('FEV1/FVC', 'fev1FvcRatio', '%')}
