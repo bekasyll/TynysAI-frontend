@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { User, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import DatePicker, { registerLocale } from 'react-datepicker';
+import { ru as ruLocale, enUS as enLocale } from 'date-fns/locale';
+import { format as formatDate, parseISO, isValid } from 'date-fns';
+import 'react-datepicker/dist/react-datepicker.css';
 import AvatarUpload from '../../components/ui/AvatarUpload';
 import AccountTab from '../../components/profile/AccountTab';
 import PasswordTab from '../../components/profile/PasswordTab';
@@ -16,9 +20,17 @@ import Button from '../../components/ui/Button';
 import { GENDER_TYPES, BLOOD_TYPES } from '../../types';
 import type { UpdatePatientProfileRequest } from '../../types';
 
+// date-fns has no Kazakh locale, fall back to Russian (Cyrillic, sensible
+// month names for kk users until date-fns ships kk).
+registerLocale('ru', ruLocale);
+registerLocale('kk', ruLocale);
+registerLocale('en', enLocale);
+
+const MIN_DOB = new Date(1900, 0, 1);
+
 export default function PatientProfilePage() {
   const { user, updateAvatar } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<'medical' | 'account' | 'password'>('medical');
 
@@ -67,7 +79,7 @@ export default function PatientProfilePage() {
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{user?.fullName}</h2>
             <p className="text-sm sm:text-base text-gray-500 break-all">{user?.email}</p>
             {profile?.phoneNumber && <p className="text-sm text-gray-500">{profile.phoneNumber}</p>}
-            {profile?.age && <p className="text-sm text-gray-400">{t('profile.age_years', { age: profile.age })}</p>}
+            {profile?.age != null && profile.age > 0 && <p className="text-sm text-gray-400">{t('profile.age_years', { count: profile.age })}</p>}
           </div>
         </div>
       </Card>
@@ -99,8 +111,36 @@ export default function PatientProfilePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="form-label">{t('profile.date_of_birth')}</label>
-                <input type="date" className="form-input" defaultValue={profile?.dateOfBirth ?? ''}
-                  {...profileForm.register('dateOfBirth')} />
+                <Controller
+                  name="dateOfBirth"
+                  control={profileForm.control}
+                  defaultValue={profile?.dateOfBirth ?? ''}
+                  render={({ field }) => {
+                    const parsed = field.value ? parseISO(field.value) : null;
+                    const selected = parsed && isValid(parsed) ? parsed : null;
+                    return (
+                      <DatePicker
+                        selected={selected}
+                        onChange={(d: Date | null) => field.onChange(d ? formatDate(d, 'yyyy-MM-dd') : '')}
+                        onBlur={field.onBlur}
+                        // Form value stays as ISO yyyy-MM-dd for the backend
+                        // (LocalDate); the picker only controls how it's
+                        // shown and entered.
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="dd/MM/yyyy"
+                        minDate={MIN_DOB}
+                        maxDate={new Date()}
+                        locale={i18n.language}
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                        wrapperClassName="block w-full"
+                        className="form-input w-full"
+                        autoComplete="off"
+                      />
+                    );
+                  }}
+                />
               </div>
               <div>
                 <label className="form-label">{t('profile.gender')}</label>

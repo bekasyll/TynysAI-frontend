@@ -10,11 +10,14 @@ import { PageSpinner } from '../../components/ui/Spinner';
 import Pagination from '../../components/ui/Pagination';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
+import ListFilters from '../../components/list/ListFilters';
+import DetailRow from '../../components/list/DetailRow';
 import { format } from 'date-fns';
 import { useDateLocale } from '../../hooks/useDateLocale';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { useApiMutation } from '../../hooks/useApiMutation';
-import type { DiagnosticReportResponse } from '../../types';
+import { SEVERITY_TYPES, DISEASE_TYPES } from '../../types';
+import type { DiagnosticReportResponse, Severity, DiseaseType } from '../../types';
 
 export default function DoctorReportsPage() {
   const navigate = useNavigate();
@@ -22,11 +25,24 @@ export default function DoctorReportsPage() {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
   const [selected, setSelected] = useState<DiagnosticReportResponse | null>(null);
+  const [search, setSearch] = useState('');
+  const [severity, setSeverity] = useState<Severity | ''>('');
+  const [diagnosis, setDiagnosis] = useState<DiseaseType | ''>('');
+
+  const filters = {
+    q: search || undefined,
+    severity: severity || undefined,
+    diagnosis: diagnosis || undefined,
+  };
+  const hasActive = !!search || !!severity || !!diagnosis;
 
   const { items, pagination, isLoading } = usePagedQuery(
-    ['doctor-reports'],
-    (p) => reportsApi.listForDoctor(p).then((r) => r.data.data!),
+    ['doctor-reports', search, severity, diagnosis],
+    (p) => reportsApi.listForDoctor(p, 10, filters).then((r) => r.data.data!),
   );
+
+  const clearAll = () => { setSearch(''); setSeverity(''); setDiagnosis(''); };
+  const initialLoading = isLoading && !hasActive && items.length === 0;
 
   const sendMutation = useApiMutation(
     (id: number) => reportsApi.send(id),
@@ -40,11 +56,21 @@ export default function DoctorReportsPage() {
     },
   );
 
-  if (isLoading) return <PageSpinner />;
+  if (initialLoading) return <PageSpinner />;
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center gap-2 justify-between">
+        <ListFilters search={search} onSearchChange={setSearch} hasActive={hasActive} onClear={clearAll} placeholder={t('common.search_patient_name')}>
+          <select className="form-select !py-2 text-base sm:text-sm" value={severity} onChange={(e) => setSeverity(e.target.value as Severity | '')}>
+            <option value="">{t('common.any_severity')}</option>
+            {SEVERITY_TYPES.map((s) => <option key={s} value={s}>{t(`severity.${s}`)}</option>)}
+          </select>
+          <select className="form-select !py-2 text-base sm:text-sm" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value as DiseaseType | '')}>
+            <option value="">{t('common.any_diagnosis')}</option>
+            {DISEASE_TYPES.map((d) => <option key={d} value={d}>{t(`disease.${d}`)}</option>)}
+          </select>
+        </ListFilters>
         <Button icon={<Plus size={16} />} onClick={() => navigate('/doctor/reports/create')}>
           {t('doctor_reports.create_btn')}
         </Button>
@@ -54,8 +80,8 @@ export default function DoctorReportsPage() {
         {items.length === 0 ? (
           <EmptyState
             icon={ClipboardList}
-            title={t('doctor_reports.empty')}
-            subtitle={t('doctor_reports.empty_sub')}
+            title={hasActive ? t('common.no_filter_match') : t('doctor_reports.empty')}
+            subtitle={hasActive ? t('common.try_clear_filters') : t('doctor_reports.empty_sub')}
           />
         ) : (
           <>
@@ -64,9 +90,9 @@ export default function DoctorReportsPage() {
                 <tr>
                   <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500">{t('doctor_reports.col_patient')}</th>
                   <th className="hidden md:table-cell px-6 py-3 text-left font-medium text-gray-500">{t('doctor_reports.col_diagnosis')}</th>
-                  <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 w-[90px] sm:w-[110px]">{t('doctor_reports.col_severity')}</th>
+                  <th className="px-2 sm:px-6 py-3 text-right font-medium text-gray-500 w-[90px] sm:w-[130px]">{t('doctor_reports.col_severity')}</th>
                   <th className="hidden lg:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[130px]">{t('doctor_reports.col_date')}</th>
-                  <th className="hidden sm:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[100px]">{t('doctor_reports.col_status')}</th>
+                  <th className="hidden sm:table-cell px-6 py-3 text-right font-medium text-gray-500 w-[100px]">{t('doctor_reports.col_status')}</th>
                   <th className="px-2 sm:px-6 py-3 w-[44px] sm:w-[120px]"></th>
                 </tr>
               </thead>
@@ -84,9 +110,9 @@ export default function DoctorReportsPage() {
                       </div>
                     </td>
                     <td className="hidden md:table-cell px-6 py-4 text-gray-600 break-words">{r.finalDiagnosisDisplayName ?? t('disease.' + r.finalDiagnosis)}</td>
-                    <td className="px-2 sm:px-6 py-4"><SeverityBadge severity={r.severity} /></td>
-                    <td className="hidden lg:table-cell px-6 py-4 text-gray-500 break-words">{format(new Date(r.createdAt), 'd MMM yyyy', { locale: dateLocale })}</td>
-                    <td className="hidden sm:table-cell px-6 py-4">
+                    <td className="px-2 sm:px-6 py-4 text-right"><SeverityBadge severity={r.severity} /></td>
+                    <td className="hidden lg:table-cell px-6 py-4 text-gray-500 break-words">{format(new Date(r.createdAt), 'dd/MM/yyyy', { locale: dateLocale })}</td>
+                    <td className="hidden sm:table-cell px-6 py-4 text-right">
                       {r.sentToPatient
                         ? <span className="text-xs text-green-600 font-medium">{t('doctor_reports.sent')}</span>
                         : <span className="text-xs text-gray-400">{t('doctor_reports.draft')}</span>}
@@ -133,7 +159,7 @@ export default function DoctorReportsPage() {
             <DetailRow label={t('doctor_reports.col_severity')} value={<SeverityBadge severity={selected.severity} />} />
             <DetailRow
               label={t('doctor_reports.col_date')}
-              value={format(new Date(selected.createdAt), 'd MMMM yyyy, HH:mm', { locale: dateLocale })}
+              value={format(new Date(selected.createdAt), 'dd/MM/yyyy, HH:mm', { locale: dateLocale })}
             />
             <DetailRow
               label={t('doctor_reports.col_status')}
@@ -163,15 +189,6 @@ export default function DoctorReportsPage() {
           </div>
         )}
       </Modal>
-    </div>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-3">
-      <span className="text-xs text-gray-400 uppercase tracking-wide pt-0.5 shrink-0">{label}</span>
-      <span className="text-sm text-gray-900 text-right break-words min-w-0">{value}</span>
     </div>
   );
 }

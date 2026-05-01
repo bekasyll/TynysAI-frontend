@@ -20,7 +20,22 @@
     "required": "Обязательное поле",
     "min_chars": "Мин. {{n}} символов",
     "not_found": "Не найдено",
-    "action_irreversible": "Это действие необратимо."
+    "action_irreversible": "Это действие необратимо.",
+    "clear_filters": "Сбросить фильтры",
+    "any_status": "Любой статус",
+    "any_diagnosis": "Любой диагноз",
+    "any_severity": "Любая степень",
+    "any_test_type": "Любой тип анализа",
+    "no_filter_match": "Ничего не найдено",
+    "try_clear_filters": "Сбросьте фильтры или измените запрос",
+    "search_patient_diagnosis": "Имя пациента, диагноз, заметки...",
+    "search_diagnosis_notes": "Диагноз, заметки, имя файла...",
+    "search_test_type_notes": "Тип анализа, лаборатория, заметки...",
+    "search_doctor_credentials": "ФИО, специализация, лицензия, клиника...",
+    "search_report_text": "Имя пациента, диагноз, текст заключения...",
+    "search_my_report_text": "Диагноз, наблюдения, текст заключения...",
+    "search_patient_name": "Имя или фамилия пациента...",
+    "search_doctor_name": "Имя или фамилия врача..."
   },
   "lang": {
     "ru": "Русский",
@@ -56,7 +71,7 @@
     "PENDING": "Ожидание",
     "PROCESSING": "Обработка",
     "COMPLETED": "Завершён",
-    "REQUIRES_REVIEW": "Ожидает заключения врача",
+    "REQUIRES_REVIEW": "На проверке",
     "VALIDATED": "Подтверждён",
     "FAILED": "Ошибка"
   },
@@ -132,6 +147,7 @@
     "REPORT_UPDATED": "Отчёт обновлён",
     "LAB_RESULT_ADDED": "Анализ добавлен",
     "DOCTOR_MESSAGE": "Сообщение врача",
+    "DOCTOR_PENDING_APPROVAL": "Врач ждёт одобрения",
     "ACCOUNT_VERIFIED": "Аккаунт верифицирован",
     "SYSTEM": "Системное"
   },
@@ -149,6 +165,7 @@
     "REPORT_UPDATED": "Диагностический отчёт обновлён",
     "LAB_RESULT_ADDED": "Добавлен лабораторный анализ: {{testType}}",
     "DOCTOR_MESSAGE": "Новое сообщение от врача {{doctorName}}",
+    "DOCTOR_PENDING_APPROVAL": "Врач {{doctorName}} ({{doctorEmail}}) ждёт одобрения",
     "ACCOUNT_VERIFIED": "Ваш аккаунт верифицирован",
     "SYSTEM": "{{message}}"
   },
@@ -185,8 +202,15 @@
     "placeholder_first_name": "Азамат",
     "placeholder_last_name": "Ахметов",
     "placeholder_email": "azamat@hospital.kz",
-    "placeholder_email_login": "user@hospital.kz",
-    "login_subtitle": "Введите email и пароль для входа."
+    "placeholder_email_login": "user@tynysai.com",
+    "login_subtitle": "Введите email и пароль для входа.",
+    "forgot_password": "Забыли пароль?",
+    "forgot_password_title": "Сброс пароля",
+    "forgot_password_subtitle": "Введите email, привязанный к аккаунту. Мы пришлём ссылку для сброса пароля.",
+    "forgot_password_btn": "Отправить ссылку",
+    "forgot_password_sent": "Отправлена ссылка для сброса пароля. Проверьте почту.",
+    "forgot_password_back": "Вернуться ко входу",
+    "forgot_password_error": "Не удалось отправить письмо. Попробуйте позже."
   },
   "profile": {
     "tabs_medical": "Медицинские данные",
@@ -228,7 +252,10 @@
     "password_changed": "Пароль изменён",
     "save_error": "Ошибка при сохранении",
     "wrong_password": "Неверный текущий пароль или ошибка",
-    "age_years": "{{age}} лет",
+    "age_years_one": "{{count}} год",
+    "age_years_few": "{{count}} года",
+    "age_years_many": "{{count}} лет",
+    "age_years_other": "{{count}} лет",
     "middle_name": "Отчество"
   },
   "analyses": {
@@ -333,7 +360,11 @@
     "success": "Заявка отправлена врачу",
     "cancel_success": "Запись отменена",
     "cancel_error": "Ошибка при отмене",
-    "book_error": "Ошибка при записи"
+    "book_error": "Ошибка при записи",
+    "pick_doctor_first": "Сначала выберите врача",
+    "no_schedule_for_day": "У врача нет рабочих часов в этот день",
+    "slot_booked": "Уже занято",
+    "slot_too_soon": "Слишком близко — выберите более поздний слот"
   },
   "doctor_appointments": {
     "title": "Приёмы",
@@ -419,7 +450,10 @@
     "col_age": "Возраст",
     "col_blood_type": "Группа крови",
     "not_found": "Пациент не найден",
-    "age_years": "{{age}} лет",
+    "age_years_one": "{{count}} год",
+    "age_years_few": "{{count}} года",
+    "age_years_many": "{{count}} лет",
+    "age_years_other": "{{count}} лет",
     "tab_analyses": "Снимки ({{n}})",
     "tab_labs": "Анализы ({{n}})",
     "tab_reports": "Отчёты ({{n}})",
@@ -448,7 +482,14 @@
     "upload_xray": "Загрузить рентген",
     "upload_xray_for": "Загрузка снимка для",
     "forbidden_hint": "Возможно, ваш профиль ещё не одобрен администратором.",
-    "forbidden_title": "Доступ закрыт"
+    "forbidden_title": "Доступ закрыт",
+    "tab_lab": "Анализы ({{n}})",
+    "no_lab": "Анализов нет",
+    "col_lab_test": "Анализ",
+    "col_lab_lab": "Лаборатория",
+    "col_lab_doctor": "Кем добавлено",
+    "assigned_to_other": "Другой врач",
+    "assigned_to_other_full": "Снимок назначен другому врачу — только он может валидировать"
   },
   "validate": {
     "title": "Заключение врача",
@@ -467,7 +508,8 @@
     "comment_placeholder": "Клинические наблюдения, рекомендации...",
     "confirm_btn": "Подтвердить диагноз",
     "success": "Диагноз подтверждён",
-    "error": "Ошибка при валидации"
+    "error": "Ошибка при валидации",
+    "refresh_ai": "Обновить"
   },
   "create_report": {
     "base_info": "Основные данные",
@@ -496,7 +538,10 @@
     "send_to_patient": "Отправить отчёт пациенту сразу после создания",
     "submit_btn": "Создать отчёт",
     "success": "Отчёт создан",
-    "error": "Ошибка при создании отчёта"
+    "error": "Ошибка при создании отчёта",
+    "xray_label": "Снимок пациента",
+    "no_xray": "Без снимка",
+    "no_xrays_for_patient": "У этого пациента нет назначенных вам снимков"
   },
   "doctor_reports": {
     "empty": "Отчётов пока нет",
@@ -584,6 +629,7 @@
     "phone": "Телефон",
     "approvals_empty": "Нет заявок на одобрение",
     "approvals_empty_sub": "Все врачи верифицированы",
+    "doctor_details_title": "Подробнее о враче",
     "specialization_label": "Специализация",
     "license_label": "Лицензия",
     "clinic_label": "Клиника",
@@ -622,29 +668,21 @@
     "delete_btn": "Удалить",
     "delete_msg": "Учётка будет удалена и в Keycloak, и локально. Связанные профили (пациент/врач) тоже сотрутся. Это действие необратимо.",
     "delete_title": "Удалить пользователя?",
-    "hide": "Скрыть",
-    "new_password": "Новый пароль",
     "not_verified": "не подтв.",
-    "password_min_hint": "минимум 8 символов",
-    "password_reset_done": "Пароль обновлён",
-    "reset_password_btn": "Сбросить пароль",
-    "reset_password_title": "Сбросить пароль",
     "sessions_btn": "Завершить",
     "sessions_btn_short": "Завершить сессии",
     "sessions_msg": "Все активные refresh-токены будут отозваны. Пользователь будет вынужден войти заново.",
     "sessions_revoked": "Сессии завершены",
     "sessions_title": "Завершить все сессии?",
-    "show": "Показать",
-    "temporary_password": "Временный пароль",
-    "temporary_password_hint": "Пользователь должен будет сменить его при следующем входе.",
     "unblock_btn": "Разблокировать",
     "unblock_msg": "Пользователь снова сможет логиниться.",
     "unblock_title": "Разблокировать пользователя?",
     "unblocked": "Пользователь разблокирован",
-    "verify_btn": "Письмо подтверждения",
-    "verify_msg": "Keycloak пришлёт пользователю письмо со ссылкой для подтверждения email. Требуется настроенный SMTP.",
-    "verify_sent": "Письмо с подтверждением отправлено",
-    "verify_title": "Отправить письмо с подтверждением?"
+    "edit_schedule_btn": "Изменить расписание",
+    "work_schedule_title": "Рабочее расписание",
+    "add_interval": "Добавить интервал",
+    "no_intervals": "Выходной",
+    "work_schedule_saved": "Расписание сохранено"
   },
   "notifications": {
     "empty": "Уведомлений нет",
@@ -662,7 +700,9 @@
     "delete_error": "Ошибка удаления"
   },
   "pagination": {
-    "of": "из"
+    "of": "из",
+    "prev": "Предыдущая страница",
+    "next": "Следующая страница"
   },
   "appointment_detail": {
     "complaints_label": "Жалобы пациента",
@@ -699,5 +739,14 @@
     "section_professional": "Профессиональные данные",
     "submit": "Создать аккаунт"
   },
-  "scope": "openid"
+  "scope": "openid",
+  "weekday": {
+    "MONDAY": "Понедельник",
+    "TUESDAY": "Вторник",
+    "WEDNESDAY": "Среда",
+    "THURSDAY": "Четверг",
+    "FRIDAY": "Пятница",
+    "SATURDAY": "Суббота",
+    "SUNDAY": "Воскресенье"
+  }
 }

@@ -92,7 +92,7 @@ export default function UsersTable({ users, pagination, onAction }: Props) {
                   : <Badge color="red">{t('admin.blocked')}</Badge>}
               </td>
               <td className="hidden lg:table-cell px-6 py-4 text-gray-500">
-                {format(new Date(u.createdAt), 'd MMM yyyy', { locale: dateLocale })}
+                {format(new Date(u.createdAt), 'dd/MM/yyyy', { locale: dateLocale })}
               </td>
               <td className="px-2 sm:px-6 py-4 text-right">
                 <UserActionMenu

@@ -22,7 +22,7 @@ export default function DoctorAppointmentsPage() {
 
   const status = filter === 'ALL' ? undefined : filter;
 
-  const { items, pagination, isLoading, setPage } = usePagedQuery(
+  const { items, pagination, isLoading } = usePagedQuery(
     ['doctor-appointments', filter],
     (p) => appointmentsApi.listForDoctor(status, p).then((r) => r.data.data!),
   );
@@ -33,7 +33,7 @@ export default function DoctorAppointmentsPage() {
         {FILTERS.map((f) => (
           <button
             key={f}
-            onClick={() => { setFilter(f); setPage(0); }}
+            onClick={() => setFilter(f)}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               filter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
@@ -74,13 +74,13 @@ export default function DoctorAppointmentsPage() {
                         <div className="font-medium text-gray-900 break-words">{appt.patientName ?? '-'}</div>
                         <div className="md:hidden text-xs text-gray-500 mt-0.5 break-words">
                           {appt.appointmentDate
-                            ? format(new Date(appt.appointmentDate), 'd MMM yyyy, HH:mm', { locale: dateLocale })
+                            ? format(new Date(appt.appointmentDate), 'dd/MM/yyyy, HH:mm', { locale: dateLocale })
                             : '-'}
                         </div>
                       </td>
                       <td className="hidden md:table-cell px-6 py-4 text-gray-600 break-words">
                         {appt.appointmentDate
-                          ? format(new Date(appt.appointmentDate), 'd MMM yyyy, HH:mm', { locale: dateLocale })
+                          ? format(new Date(appt.appointmentDate), 'dd/MM/yyyy, HH:mm', { locale: dateLocale })
                           : '-'}
                       </td>
                       <td className="hidden lg:table-cell px-6 py-4 text-gray-600 break-words">{appt.patientComplaints ?? '-'}</td>

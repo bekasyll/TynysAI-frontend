@@ -15,15 +15,11 @@ export default function DoctorsListPage() {
 
   const { items, pagination, isLoading } = usePagedQuery(
     ['available-doctors'],
-    (p) => doctorsApi.listApproved(p, 20).then((r) => r.data.data!),
+    (p) => doctorsApi.listApproved(p, 10).then((r) => r.data.data!),
   );
 
   const filtered = search
-    ? items.filter((d) =>
-        d.fullName.toLowerCase().includes(search.toLowerCase()) ||
-        (d.specialization ?? '').toLowerCase().includes(search.toLowerCase()) ||
-        (d.hospitalName ?? '').toLowerCase().includes(search.toLowerCase())
-      )
+    ? items.filter((d) => d.fullName.toLowerCase().includes(search.toLowerCase()))
     : items;
 
   if (isLoading) return <PageSpinner />;
@@ -34,7 +30,7 @@ export default function DoctorsListPage() {
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
           className="form-input pl-9 w-full max-w-sm"
-          placeholder={t('doctors_list.search_placeholder')}
+          placeholder={t('common.search_doctor_name')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />

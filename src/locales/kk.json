@@ -20,7 +20,22 @@
     "required": "Міндетті өріс",
     "min_chars": "Мин. {{n}} таңба",
     "not_found": "Табылмады",
-    "action_irreversible": "Бұл әрекетті кері қайтару мүмкін емес."
+    "action_irreversible": "Бұл әрекетті кері қайтару мүмкін емес.",
+    "clear_filters": "Сүзгілерді тазалау",
+    "any_status": "Кез келген күй",
+    "any_diagnosis": "Кез келген диагноз",
+    "any_severity": "Кез келген ауырлық",
+    "any_test_type": "Кез келген анализ түрі",
+    "no_filter_match": "Ештеңе табылмады",
+    "try_clear_filters": "Сүзгілерді тазалаңыз немесе іздеуді өзгертіңіз",
+    "search_patient_diagnosis": "Пациент аты, диагноз, ескертулер...",
+    "search_diagnosis_notes": "Диагноз, ескертулер, файл аты...",
+    "search_test_type_notes": "Анализ түрі, зертхана, ескертулер...",
+    "search_doctor_credentials": "Аты-жөні, мамандық, лицензия, клиника...",
+    "search_report_text": "Пациент аты, диагноз, қорытынды мәтіні...",
+    "search_my_report_text": "Диагноз, бақылаулар, қорытынды мәтіні...",
+    "search_patient_name": "Пациенттің аты немесе тегі...",
+    "search_doctor_name": "Дәрігердің аты немесе тегі..."
   },
   "lang": {
     "ru": "Русский",
@@ -56,7 +71,7 @@
     "PENDING": "Күтуде",
     "PROCESSING": "Өңделуде",
     "COMPLETED": "Аяқталды",
-    "REQUIRES_REVIEW": "Дәрігердің қорытындысын күтуде",
+    "REQUIRES_REVIEW": "Тексеруде",
     "VALIDATED": "Расталды",
     "FAILED": "Қате"
   },
@@ -132,6 +147,7 @@
     "REPORT_UPDATED": "Есеп жаңартылды",
     "LAB_RESULT_ADDED": "Анализ қосылды",
     "DOCTOR_MESSAGE": "Дәрігер хабары",
+    "DOCTOR_PENDING_APPROVAL": "Дәрігер бекітуді күтуде",
     "ACCOUNT_VERIFIED": "Аккаунт расталды",
     "SYSTEM": "Жүйелік"
   },
@@ -149,6 +165,7 @@
     "REPORT_UPDATED": "Диагностикалық есеп жаңартылды",
     "LAB_RESULT_ADDED": "Зертханалық анализ қосылды: {{testType}}",
     "DOCTOR_MESSAGE": "{{doctorName}} дәрігерден жаңа хабар",
+    "DOCTOR_PENDING_APPROVAL": "{{doctorName}} ({{doctorEmail}}) дәрігері бекітуді күтуде",
     "ACCOUNT_VERIFIED": "Аккаунтыңыз расталды",
     "SYSTEM": "{{message}}"
   },
@@ -185,8 +202,15 @@
     "placeholder_first_name": "Азамат",
     "placeholder_last_name": "Ахметов",
     "placeholder_email": "azamat@hospital.kz",
-    "placeholder_email_login": "user@hospital.kz",
-    "login_subtitle": "Жүйеге кіру үшін email мен құпиясөзді енгізіңіз."
+    "placeholder_email_login": "user@tynysai.com",
+    "login_subtitle": "Жүйеге кіру үшін email мен құпиясөзді енгізіңіз.",
+    "forgot_password": "Құпия сөзді ұмыттыңыз ба?",
+    "forgot_password_title": "Құпия сөзді қалпына келтіру",
+    "forgot_password_subtitle": "Аккаунтқа байланыстырылған email-ді енгізіңіз. Біз қалпына келтіру сілтемесін жібереміз.",
+    "forgot_password_btn": "Сілтеме жіберу",
+    "forgot_password_sent": "Құпия сөзді қалпына келтіру сілтемесі жіберілді. Поштаны тексеріңіз.",
+    "forgot_password_back": "Кіруге қайту",
+    "forgot_password_error": "Хат жіберілмеді. Кейінірек қайталап көріңіз."
   },
   "profile": {
     "tabs_medical": "Медициналық деректер",
@@ -228,7 +252,8 @@
     "password_changed": "Құпия сөз өзгертілді",
     "save_error": "Сақтау қатесі",
     "wrong_password": "Ағымдағы құпия сөз қате немесе қате",
-    "age_years": "{{age}} жас",
+    "age_years_one": "{{count}} жас",
+    "age_years_other": "{{count}} жас",
     "middle_name": "Әкесінің аты"
   },
   "analyses": {
@@ -333,7 +358,11 @@
     "success": "Өтінім дәрігерге жіберілді",
     "cancel_success": "Жазылу бас тартылды",
     "cancel_error": "Бас тарту кезінде қате",
-    "book_error": "Жазылу кезінде қате"
+    "book_error": "Жазылу кезінде қате",
+    "pick_doctor_first": "Алдымен дәрігерді таңдаңыз",
+    "no_schedule_for_day": "Дәрігердің бұл күні жұмыс уақыты жоқ",
+    "slot_booked": "Бос емес",
+    "slot_too_soon": "Тым жақын — кешірек уақытты таңдаңыз"
   },
   "doctor_appointments": {
     "title": "Қабылдаулар",
@@ -419,7 +448,8 @@
     "col_age": "Жасы",
     "col_blood_type": "Қан тобы",
     "not_found": "Пациент табылмады",
-    "age_years": "{{age}} жас",
+    "age_years_one": "{{count}} жас",
+    "age_years_other": "{{count}} жас",
     "tab_analyses": "Суреттер ({{n}})",
     "tab_labs": "Анализдер ({{n}})",
     "tab_reports": "Есептер ({{n}})",
@@ -448,7 +478,14 @@
     "upload_xray": "Рентген жүктеу",
     "upload_xray_for": "Жүктеу",
     "forbidden_hint": "Сіздің профиліңізді әкімші әлі бекітпеген болуы мүмкін.",
-    "forbidden_title": "Қол жетімсіз"
+    "forbidden_title": "Қол жетімсіз",
+    "tab_lab": "Анализдер ({{n}})",
+    "no_lab": "Анализдер жоқ",
+    "col_lab_test": "Анализ",
+    "col_lab_lab": "Зертхана",
+    "col_lab_doctor": "Қосқан",
+    "assigned_to_other": "Басқа дәрігер",
+    "assigned_to_other_full": "Сурет басқа дәрігерге тағайындалған — тек ол растай алады"
   },
   "validate": {
     "title": "Дәрігер қорытындысы",
@@ -467,7 +504,8 @@
     "comment_placeholder": "Клиникалық бақылаулар, ұсыныстар...",
     "confirm_btn": "Диагнозды растау",
     "success": "Диагноз расталды",
-    "error": "Растау қатесі"
+    "error": "Растау қатесі",
+    "refresh_ai": "Жаңарту"
   },
   "create_report": {
     "base_info": "Негізгі деректер",
@@ -496,7 +534,10 @@
     "send_to_patient": "Есепті жасағаннан кейін пациентке дереу жіберу",
     "submit_btn": "Есеп жасау",
     "success": "Есеп жасалды",
-    "error": "Есеп жасау қатесі"
+    "error": "Есеп жасау қатесі",
+    "xray_label": "Пациент суреті",
+    "no_xray": "Сурет жоқ",
+    "no_xrays_for_patient": "Бұл пациентте сізге тағайындалған суреттер жоқ"
   },
   "doctor_reports": {
     "empty": "Есептер жоқ",
@@ -584,6 +625,7 @@
     "phone": "Телефон",
     "approvals_empty": "Бекіту өтінімдері жоқ",
     "approvals_empty_sub": "Барлық дәрігерлер расталған",
+    "doctor_details_title": "Дәрігер туралы толық",
     "specialization_label": "Мамандығы",
     "license_label": "Лицензия",
     "clinic_label": "Клиника",
@@ -622,29 +664,21 @@
     "delete_btn": "Жою",
     "delete_msg": "Тіркелгі Keycloak-та да, жергілікті де жойылады. Байланысты профильдер (науқас/дәрігер) де жойылады. Бұл әрекетті қайтару мүмкін емес.",
     "delete_title": "Қолданушыны жою керек пе?",
-    "hide": "Жасыру",
-    "new_password": "Жаңа құпиясөз",
     "not_verified": "расталмаған",
-    "password_min_hint": "кемінде 8 таңба",
-    "password_reset_done": "Құпиясөз жаңартылды",
-    "reset_password_btn": "Құпиясөзді қалпына келтіру",
-    "reset_password_title": "Құпиясөзді қалпына келтіру",
     "sessions_btn": "Аяқтау",
     "sessions_btn_short": "Сессияларды аяқтау",
     "sessions_msg": "Барлық белсенді refresh-токендер қайтарылып алынады. Қолданушы қайта кіруге мәжбүр болады.",
     "sessions_revoked": "Сессиялар аяқталды",
     "sessions_title": "Барлық сессияларды аяқтау керек пе?",
-    "show": "Көрсету",
-    "temporary_password": "Уақытша құпиясөз",
-    "temporary_password_hint": "Қолданушы келесі кіруде оны өзгертуге міндетті болады.",
     "unblock_btn": "Бұғаттан босату",
     "unblock_msg": "Қолданушы қайтадан жүйеге кіре алады.",
     "unblock_title": "Қолданушыны бұғаттан босату керек пе?",
     "unblocked": "Қолданушы бұғаттан босатылды",
-    "verify_btn": "Растау хаты",
-    "verify_msg": "Keycloak қолданушыға email-ді растайтын сілтемесі бар хат жібереді. SMTP бапталған болуы керек.",
-    "verify_sent": "Растау хаты жіберілді",
-    "verify_title": "Растау хатын жіберу керек пе?"
+    "edit_schedule_btn": "Кестені өзгерту",
+    "work_schedule_title": "Жұмыс кестесі",
+    "add_interval": "Интервал қосу",
+    "no_intervals": "Демалыс",
+    "work_schedule_saved": "Кесте сақталды"
   },
   "notifications": {
     "empty": "Хабарламалар жоқ",
@@ -662,7 +696,9 @@
     "delete_error": "Жою қатесі"
   },
   "pagination": {
-    "of": "/"
+    "of": "/",
+    "prev": "Алдыңғы бет",
+    "next": "Келесі бет"
   },
   "appointment_detail": {
     "complaints_label": "Науқастың шағымдары",
@@ -699,5 +735,14 @@
     "section_professional": "Кәсіби деректер",
     "submit": "Тіркелгі құру"
   },
-  "scope": "openid"
+  "scope": "openid",
+  "weekday": {
+    "MONDAY": "Дүйсенбі",
+    "TUESDAY": "Сейсенбі",
+    "WEDNESDAY": "Сәрсенбі",
+    "THURSDAY": "Бейсенбі",
+    "FRIDAY": "Жұма",
+    "SATURDAY": "Сенбі",
+    "SUNDAY": "Жексенбі"
+  }
 }

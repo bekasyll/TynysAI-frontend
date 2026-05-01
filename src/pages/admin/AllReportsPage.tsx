@@ -7,31 +7,58 @@ import EmptyState from '../../components/ui/EmptyState';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Pagination from '../../components/ui/Pagination';
 import Modal from '../../components/ui/Modal';
+import ListFilters from '../../components/list/ListFilters';
+import DetailRow from '../../components/list/DetailRow';
 import { format } from 'date-fns';
 import { useDateLocale } from '../../hooks/useDateLocale';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
-import type { DiagnosticReportResponse } from '../../types';
+import { SEVERITY_TYPES, DISEASE_TYPES } from '../../types';
+import type { DiagnosticReportResponse, Severity, DiseaseType } from '../../types';
 
 export default function AllReportsPage() {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
   const [selected, setSelected] = useState<DiagnosticReportResponse | null>(null);
+  const [search, setSearch] = useState('');
+  const [severity, setSeverity] = useState<Severity | ''>('');
+  const [diagnosis, setDiagnosis] = useState<DiseaseType | ''>('');
+
+  const filters = {
+    q: search || undefined,
+    severity: severity || undefined,
+    diagnosis: diagnosis || undefined,
+  };
+  const hasActive = !!search || !!severity || !!diagnosis;
 
   const { items, pagination, isLoading } = usePagedQuery(
-    ['admin-reports'],
-    (p) => reportsApi.listAll(p).then((r) => r.data.data!),
+    ['admin-reports', search, severity, diagnosis],
+    (p) => reportsApi.listAll(p, 10, filters).then((r) => r.data.data!),
   );
 
-  if (isLoading) return <PageSpinner />;
+  const clearAll = () => { setSearch(''); setSeverity(''); setDiagnosis(''); };
+  const initialLoading = isLoading && !hasActive && items.length === 0;
+
+  if (initialLoading) return <PageSpinner />;
 
   return (
     <div className="space-y-4">
+      <ListFilters search={search} onSearchChange={setSearch} hasActive={hasActive} onClear={clearAll} placeholder={t('common.search_patient_name')}>
+        <select className="form-select !py-2 text-base sm:text-sm" value={severity} onChange={(e) => setSeverity(e.target.value as Severity | '')}>
+          <option value="">{t('common.any_severity')}</option>
+          {SEVERITY_TYPES.map((s) => <option key={s} value={s}>{t(`severity.${s}`)}</option>)}
+        </select>
+        <select className="form-select !py-2 text-base sm:text-sm" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value as DiseaseType | '')}>
+          <option value="">{t('common.any_diagnosis')}</option>
+          {DISEASE_TYPES.map((d) => <option key={d} value={d}>{t(`disease.${d}`)}</option>)}
+        </select>
+      </ListFilters>
+
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         {items.length === 0 ? (
           <EmptyState
             icon={FileText}
-            title={t('admin.all_reports_empty')}
-            subtitle={t('admin.all_reports_empty_sub')}
+            title={hasActive ? t('common.no_filter_match') : t('admin.all_reports_empty')}
+            subtitle={hasActive ? t('common.try_clear_filters') : t('admin.all_reports_empty_sub')}
           />
         ) : (
           <>
@@ -43,7 +70,7 @@ export default function AllReportsPage() {
                   <th className="hidden lg:table-cell px-6 py-3 text-left font-medium text-gray-500">{t('admin.col_diagnosis')}</th>
                   <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 w-[90px] sm:w-[110px]">{t('admin.col_severity')}</th>
                   <th className="hidden md:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[120px]">{t('admin.col_date')}</th>
-                  <th className="hidden sm:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[90px]">{t('admin.col_sent')}</th>
+                  <th className="hidden sm:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[150px]">{t('admin.col_sent')}</th>
                   <th className="md:hidden px-2 py-3 w-[36px]"></th>
                 </tr>
               </thead>
@@ -63,7 +90,7 @@ export default function AllReportsPage() {
                     <td className="hidden md:table-cell px-6 py-3 text-gray-600 break-words">{r.doctorName ?? '-'}</td>
                     <td className="hidden lg:table-cell px-6 py-3 text-gray-600 break-words">{r.finalDiagnosisDisplayName ?? t('disease.' + r.finalDiagnosis)}</td>
                     <td className="px-2 sm:px-6 py-3"><SeverityBadge severity={r.severity} /></td>
-                    <td className="hidden md:table-cell px-6 py-3 text-gray-500 break-words">{format(new Date(r.createdAt), 'd MMM yyyy', { locale: dateLocale })}</td>
+                    <td className="hidden md:table-cell px-6 py-3 text-gray-500 break-words">{format(new Date(r.createdAt), 'dd/MM/yyyy', { locale: dateLocale })}</td>
                     <td className="hidden sm:table-cell px-6 py-3">
                       {r.sentToPatient
                         ? <span className="text-xs text-green-600 font-medium">{t('admin.sent_yes')}</span>
@@ -97,7 +124,7 @@ export default function AllReportsPage() {
             <DetailRow label={t('admin.col_severity')} value={<SeverityBadge severity={selected.severity} />} />
             <DetailRow
               label={t('admin.col_date')}
-              value={format(new Date(selected.createdAt), 'd MMMM yyyy, HH:mm', { locale: dateLocale })}
+              value={format(new Date(selected.createdAt), 'dd/MM/yyyy, HH:mm', { locale: dateLocale })}
             />
             <DetailRow
               label={t('admin.col_sent')}
@@ -115,15 +142,6 @@ export default function AllReportsPage() {
           </div>
         )}
       </Modal>
-    </div>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-3">
-      <span className="text-xs text-gray-400 uppercase tracking-wide pt-0.5 shrink-0">{label}</span>
-      <span className="text-sm text-gray-900 text-right break-words min-w-0">{value}</span>
     </div>
   );
 }

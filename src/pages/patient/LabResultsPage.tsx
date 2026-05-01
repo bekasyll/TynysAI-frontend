@@ -6,10 +6,12 @@ import EmptyState from '../../components/ui/EmptyState';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Pagination from '../../components/ui/Pagination';
 import Card from '../../components/ui/Card';
+import ClearFiltersButton from '../../components/list/ClearFiltersButton';
 import { format } from 'date-fns';
 import { useDateLocale } from '../../hooks/useDateLocale';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
-import type { LabResultResponse } from '../../types';
+import { LAB_TEST_TYPES } from '../../types';
+import type { LabResultResponse, LabTestType } from '../../types';
 
 function LabResultCard({ result }: { result: LabResultResponse }) {
   const [expanded, setExpanded] = useState(false);
@@ -48,7 +50,7 @@ function LabResultCard({ result }: { result: LabResultResponse }) {
             <p className="font-medium text-gray-900 break-words">{t('labTest.' + result.testType)}</p>
             <p className="text-sm text-gray-500 break-words">
               {result.labName && `${result.labName} · `}
-              {format(new Date(result.testDate), 'd MMMM yyyy', { locale: dateLocale })}
+              {format(new Date(result.testDate), 'dd/MM/yyyy', { locale: dateLocale })}
               {result.addedByDoctorName && ` · ${t('lab_results.doctor_label')}: ${result.addedByDoctorName}`}
             </p>
           </div>
@@ -87,22 +89,37 @@ function LabResultCard({ result }: { result: LabResultResponse }) {
 
 export default function LabResultsPage() {
   const { t } = useTranslation();
+  const [testType, setTestType] = useState<LabTestType | ''>('');
+
+  // Patient-side: text search removed; testType select is enough.
+  const filters = { testType: testType || undefined };
+  const hasActive = !!testType;
 
   const { items, pagination, isLoading } = usePagedQuery(
-    ['patient-lab-results'],
-    (p) => labResultsApi.listForPatient(p).then((r) => r.data.data!),
+    ['patient-lab-results', testType],
+    (p) => labResultsApi.listForPatient(p, 10, filters).then((r) => r.data.data!),
   );
 
-  if (isLoading) return <PageSpinner />;
+  const clearAll = () => { setTestType(''); };
+  const initialLoading = isLoading && !hasActive && items.length === 0;
+
+  if (initialLoading) return <PageSpinner />;
 
   return (
     <div className="space-y-4 max-w-3xl mx-auto">
+      <div className="flex flex-wrap items-center gap-2">
+        <select className="form-select !py-2 text-base sm:text-sm" value={testType} onChange={(e) => setTestType(e.target.value as LabTestType | '')}>
+          <option value="">{t('common.any_test_type')}</option>
+          {LAB_TEST_TYPES.map((tt) => <option key={tt} value={tt}>{t(`labTest.${tt}`)}</option>)}
+        </select>
+        <ClearFiltersButton hasActive={hasActive} onClear={clearAll} />
+      </div>
       {items.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200">
           <EmptyState
             icon={FlaskConical}
-            title={t('lab_results.empty')}
-            subtitle={t('lab_results.empty_sub')}
+            title={hasActive ? t('common.no_filter_match') : t('lab_results.empty')}
+            subtitle={hasActive ? t('common.try_clear_filters') : t('lab_results.empty_sub')}
           />
         </div>
       ) : (

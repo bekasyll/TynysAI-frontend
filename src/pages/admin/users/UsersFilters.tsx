@@ -27,7 +27,7 @@ export default function UsersFilters({ search, onSearchChange, roleFilter, onRol
           />
         </div>
         <select
-          className="form-input w-40"
+          className="form-select"
           value={roleFilter}
           onChange={(e) => onRoleChange(e.target.value as Role | '')}
         >

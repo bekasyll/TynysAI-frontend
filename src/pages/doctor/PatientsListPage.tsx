@@ -16,7 +16,7 @@ export default function PatientsListPage() {
 
   const { items, pagination, isLoading, error } = usePagedQuery(
     ['doctor-patients'],
-    (p) => patientsApi.list(p, 20).then((r) => r.data.data!),
+    (p) => patientsApi.list(p, 10).then((r) => r.data.data!),
     {
       retry: (failureCount, err) =>
         // don't retry on auth/authorization failures - they won't get better
@@ -80,10 +80,14 @@ export default function PatientsListPage() {
             <table className="w-full text-sm table-fixed">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_patient')}</th>
-                  <th className="hidden sm:table-cell px-6 py-3 text-left font-medium text-gray-500">{t('patients.col_email')}</th>
-                  <th className="hidden md:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[90px]">{t('patients.col_age')}</th>
-                  <th className="hidden md:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[110px]">{t('patients.col_blood_type')}</th>
+                  {/* All columns have explicit widths (table-fixed honours
+                      them) so the right-hand columns sit next to email
+                      instead of getting pushed to the far right by an
+                      unbounded "Patient" column. */}
+                  <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500 sm:w-[260px] lg:w-[320px]">{t('patients.col_patient')}</th>
+                  <th className="hidden sm:table-cell px-6 py-3 text-left font-medium text-gray-500 w-[220px] lg:w-[260px]">{t('patients.col_email')}</th>
+                  <th className="hidden md:table-cell px-3 py-3 text-left font-medium text-gray-500 w-[80px]">{t('patients.col_age')}</th>
+                  <th className="hidden md:table-cell px-3 py-3 text-left font-medium text-gray-500 w-[100px]">{t('patients.col_blood_type')}</th>
                   <th className="px-3 sm:px-6 py-3 w-[44px] sm:w-[90px]"></th>
                 </tr>
               </thead>
@@ -102,8 +106,8 @@ export default function PatientsListPage() {
                       </Link>
                     </td>
                     <td className="hidden sm:table-cell px-6 py-4 text-gray-600 break-all">{p.email}</td>
-                    <td className="hidden md:table-cell px-6 py-4 text-gray-600">{p.age ? t('patients.age_years', { age: p.age }) : '-'}</td>
-                    <td className="hidden md:table-cell px-6 py-4 text-gray-600">{p.bloodType ? t('bloodType.' + p.bloodType) : '-'}</td>
+                    <td className="hidden md:table-cell px-3 py-4 text-gray-600">{p.age && p.age > 0 ? t('patients.age_years', { count: p.age }) : '-'}</td>
+                    <td className="hidden md:table-cell px-3 py-4 text-gray-600">{p.bloodType ? t('bloodType.' + p.bloodType) : '-'}</td>
                     <td className="px-3 sm:px-6 py-4 text-right">
                       <Link
                         to={`/doctor/patients/${p.userId}`}

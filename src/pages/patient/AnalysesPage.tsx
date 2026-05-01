@@ -10,21 +10,38 @@ import { PageSpinner } from '../../components/ui/Spinner';
 import Pagination from '../../components/ui/Pagination';
 import Button from '../../components/ui/Button';
 import { ConfirmModal } from '../../components/ui/Modal';
+import ClearFiltersButton from '../../components/list/ClearFiltersButton';
 import { format } from 'date-fns';
 import { useDateLocale } from '../../hooks/useDateLocale';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { useApiMutation } from '../../hooks/useApiMutation';
+import { ANALYSIS_STATUSES, DISEASE_TYPES } from '../../types';
+import type { AnalysisStatus, DiseaseType } from '../../types';
 
 export default function AnalysesPage() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [status, setStatus] = useState<AnalysisStatus | ''>('');
+  const [diagnosis, setDiagnosis] = useState<DiseaseType | ''>('');
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
   const queryClient = useQueryClient();
 
+  // Patient-side: text search removed (filters are sufficient since user
+  // sees only their own scans). Status + diagnosis selects remain.
+  const filters = {
+    status: status || undefined,
+    diagnosis: diagnosis || undefined,
+  };
+  const hasActive = !!status || !!diagnosis;
+
   const { items, pagination, isLoading } = usePagedQuery(
-    ['patient-analyses'],
-    (p) => xraysApi.listForPatient(p).then((r) => r.data.data!),
+    ['patient-analyses', status, diagnosis],
+    (p) => xraysApi.listForPatient(p, 10, filters).then((r) => r.data.data!),
   );
+
+  const clearAll = () => { setStatus(''); setDiagnosis(''); };
+
+  const initialLoading = isLoading && !hasActive && items.length === 0;
 
   const deleteMutation = useApiMutation(
     (id: number) => xraysApi.remove(id),
@@ -38,11 +55,22 @@ export default function AnalysesPage() {
     },
   );
 
-  if (isLoading) return <PageSpinner />;
+  if (initialLoading) return <PageSpinner />;
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center gap-2 justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <select className="form-select !py-2 text-base sm:text-sm" value={status} onChange={(e) => setStatus(e.target.value as AnalysisStatus | '')}>
+            <option value="">{t('common.any_status')}</option>
+            {ANALYSIS_STATUSES.map((s) => <option key={s} value={s}>{t(`status.${s}`)}</option>)}
+          </select>
+          <select className="form-select !py-2 text-base sm:text-sm" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value as DiseaseType | '')}>
+            <option value="">{t('common.any_diagnosis')}</option>
+            {DISEASE_TYPES.map((d) => <option key={d} value={d}>{t(`disease.${d}`)}</option>)}
+          </select>
+          <ClearFiltersButton hasActive={hasActive} onClear={clearAll} />
+        </div>
         <Link to="/patient/upload">
           <Button icon={<Upload size={16} />}>{t('analyses.upload_btn')}</Button>
         </Link>
@@ -52,13 +80,13 @@ export default function AnalysesPage() {
         {items.length === 0 ? (
           <EmptyState
             icon={FileImage}
-            title={t('analyses.empty')}
-            subtitle={t('analyses.empty_sub')}
-            action={
+            title={hasActive ? t('common.no_filter_match') : t('analyses.empty')}
+            subtitle={hasActive ? t('common.try_clear_filters') : t('analyses.empty_sub')}
+            action={hasActive ? undefined : (
               <Link to="/patient/upload">
                 <Button variant="outline" icon={<Upload size={14} />}>{t('common.open')}</Button>
               </Link>
-            }
+            )}
           />
         ) : (
           <>
@@ -83,7 +111,7 @@ export default function AnalysesPage() {
                         <div className="min-w-0 flex-1">
                           <span className="font-medium text-gray-900 break-all block">{a.originalFileName}</span>
                           <span className="md:hidden text-xs text-gray-500 break-words block">
-                            {a.aiPrimaryDiagnosis ? t('disease.' + a.aiPrimaryDiagnosis) : format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}
+                            {a.aiPrimaryDiagnosis ? t('disease.' + a.aiPrimaryDiagnosis) : format(new Date(a.uploadedAt), 'dd/MM/yyyy', { locale: dateLocale })}
                           </span>
                         </div>
                       </Link>
@@ -98,7 +126,7 @@ export default function AnalysesPage() {
                       ) : '-'}
                     </td>
                     <td className="px-2 sm:px-6 py-4"><StatusBadge status={a.status} /></td>
-                    <td className="hidden lg:table-cell px-6 py-4 text-gray-500">{format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}</td>
+                    <td className="hidden lg:table-cell px-6 py-4 text-gray-500">{format(new Date(a.uploadedAt), 'dd/MM/yyyy', { locale: dateLocale })}</td>
                     <td className="px-2 sm:px-6 py-4">
                       <div className="flex items-center gap-1 justify-end">
                         <Link to={`/patient/analyses/${a.id}`}>

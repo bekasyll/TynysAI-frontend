@@ -1,7 +1,7 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { FlaskConical, Save } from 'lucide-react';
+import { FlaskConical, Save, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { patientsApi } from '../../api/patients.api';
 import { labResultsApi } from '../../api/medical-records.api';
@@ -50,6 +50,15 @@ export default function AddLabResultPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        icon={<ArrowLeft size={16} />}
+        onClick={() => navigate(-1)}
+      >
+        {t('common.back')}
+      </Button>
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-6">
         <Card>
           <div className="flex items-center gap-2 mb-5">

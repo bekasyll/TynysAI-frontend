@@ -57,14 +57,14 @@ export default function ReportDetailPage() {
           </div>
           <div>
             <p className="text-gray-500">{t('reports.date_label')}</p>
-            <p className="font-medium text-gray-900">{format(new Date(data.createdAt), 'd MMMM yyyy', { locale: dateLocale })}</p>
+            <p className="font-medium text-gray-900">{format(new Date(data.createdAt), 'dd/MM/yyyy', { locale: dateLocale })}</p>
           </div>
           {data.followUpDate && (
             <div className="flex items-center gap-2">
               <Calendar size={14} className="text-orange-500" />
               <div>
                 <p className="text-gray-500">{t('reports.next_visit')}</p>
-                <p className="font-medium text-gray-900">{format(new Date(data.followUpDate), 'd MMMM yyyy', { locale: dateLocale })}</p>
+                <p className="font-medium text-gray-900">{format(new Date(data.followUpDate), 'dd/MM/yyyy', { locale: dateLocale })}</p>
               </div>
             </div>
           )}

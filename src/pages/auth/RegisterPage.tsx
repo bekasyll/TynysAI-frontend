@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, CheckCircle } from 'lucide-react';
-import logoIcon from '../../assets/logo-background-removed.png';
+import logoIcon from '../../assets/TynysAI-logo.png';
 import Button from '../../components/ui/Button';
 import { setLanguage } from '../../i18n';
 import { useToast } from '../../components/ui/Toast';

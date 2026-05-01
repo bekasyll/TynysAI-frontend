@@ -21,7 +21,18 @@ interface AuthUser {
 interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
+  /**
+   * Flips to true after `/api/users/me` upserts the User row in user-service.
+   * Until then the panel must not mount, otherwise parallel requests like
+   * /api/patients/me hit `userService.findById` and 404 on a brand-new user.
+   */
+  profileReady: boolean;
   refresh: () => void;
+  /**
+   * Idempotent: calls `/api/users/me` so user-service's `getOrProvision` runs.
+   * Safe to invoke on every login / refresh - flips `profileReady` once.
+   */
+  ensureProfile: () => Promise<void>;
   /**
    * Pass the `avatarPath` returned by `/api/users/me` (or null/undefined when
    * the user has no avatar). The store fetches the binary, builds a fresh
@@ -51,11 +62,24 @@ function revokeIfBlob(url: string | undefined) {
   }
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
+  profileReady: false,
 
   refresh: () => set({ user: snapshotUser(), isAuthenticated: !!keycloak.authenticated }),
+
+  ensureProfile: async () => {
+    if (!keycloak.authenticated) return;
+    if (get().profileReady) return;
+    try {
+      await apiClient.get('/users/me');
+      set({ profileReady: true });
+    } catch {
+      // Leave profileReady=false: ProtectedRoute keeps the splash and the
+      // next auth event (token refresh, navigation) will retry.
+    }
+  },
 
   updateAvatar: async (avatarPath) => {
     const userId = useAuthStore.getState().user?.id;
@@ -89,7 +113,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     revokeIfBlob(useAuthStore.getState().user?.avatarUrl);
     await logoutLocal();
-    set({ user: null, isAuthenticated: false });
+    set({ user: null, isAuthenticated: false, profileReady: false });
     // Force a clean route - components depending on auth state will redirect.
     window.location.href = '/login';
   },

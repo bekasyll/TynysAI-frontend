@@ -76,7 +76,7 @@ export default function PatientDashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 text-sm break-all">{a.originalFileName}</p>
                   <p className="text-xs text-gray-500">
-                    {format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}
+                    {format(new Date(a.uploadedAt), 'dd/MM/yyyy', { locale: dateLocale })}
                     {a.aiPrimaryDiagnosis && ` · ${t('disease.' + a.aiPrimaryDiagnosis)}`}
                   </p>
                 </div>
@@ -105,7 +105,7 @@ export default function PatientDashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 text-sm">{r.finalDiagnosisDisplayName ?? t('disease.' + r.finalDiagnosis)}</p>
                   <p className="text-xs text-gray-500">
-                    {t('dashboard.doctor_label')}: {r.doctorName} · {format(new Date(r.createdAt), 'd MMM yyyy', { locale: dateLocale })}
+                    {t('dashboard.doctor_label')}: {r.doctorName} · {format(new Date(r.createdAt), 'dd/MM/yyyy', { locale: dateLocale })}
                   </p>
                 </div>
                 <ChevronRight size={16} className="text-gray-400" />

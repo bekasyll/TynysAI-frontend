@@ -46,7 +46,14 @@ export interface RegisterResponse {
   approved: boolean;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
 export const authApi = {
   registerPatient: (data: RegisterPatientRequest) =>
     anonClient.post<ApiResponse<RegisterResponse>>('/auth/register/patient', data),
+
+  forgotPassword: (data: ForgotPasswordRequest) =>
+    anonClient.post<ApiResponse<void>>('/auth/forgot-password', data),
 };

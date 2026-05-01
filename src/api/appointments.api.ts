@@ -5,7 +5,7 @@ import type {
   AppointmentStatus,
 } from '../types';
 
-function buildList(role: 'patient' | 'doctor', status?: AppointmentStatus, page = 0, size = 20) {
+function buildList(role: 'patient' | 'doctor', status?: AppointmentStatus, page = 0, size = 10) {
   const params = new URLSearchParams({ page: String(page), size: String(size) });
   if (status) params.set('status', status);
   return `/appointments/${role}?${params}`;
@@ -14,12 +14,12 @@ function buildList(role: 'patient' | 'doctor', status?: AppointmentStatus, page 
 /** appointment-service: /api/appointments */
 export const appointmentsApi = {
   // Lists
-  listForPatient: (status?: AppointmentStatus, page = 0, size = 20) =>
+  listForPatient: (status?: AppointmentStatus, page = 0, size = 10) =>
     apiClient.get<ApiResponse<PageResponse<AppointmentResponse>>>(
       buildList('patient', status, page, size)
     ),
 
-  listForDoctor: (status?: AppointmentStatus, page = 0, size = 20) =>
+  listForDoctor: (status?: AppointmentStatus, page = 0, size = 10) =>
     apiClient.get<ApiResponse<PageResponse<AppointmentResponse>>>(
       buildList('doctor', status, page, size)
     ),
@@ -48,4 +48,13 @@ export const appointmentsApi = {
     const qs = reportId != null ? `?reportId=${reportId}` : '';
     return apiClient.post<ApiResponse<AppointmentResponse>>(`/appointments/${id}/complete${qs}`);
   },
+
+  /**
+   * Returns booked 30-min slot starts ("HH:mm") for the doctor on the given
+   * date. Used to disable already-taken time buttons in the booking UI.
+   */
+  getBusySlots: (doctorId: string, date: string) =>
+    apiClient.get<ApiResponse<string[]>>(
+      `/appointments/doctor/${doctorId}/busy?date=${encodeURIComponent(date)}`
+    ),
 };

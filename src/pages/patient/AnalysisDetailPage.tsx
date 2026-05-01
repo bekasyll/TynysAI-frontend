@@ -49,7 +49,7 @@ export default function AnalysisDetailPage() {
             <div className="flex items-center gap-3 mt-1 text-sm text-gray-500 flex-wrap">
               {data.contentType && <span>{data.contentType}</span>}
               {data.fileSizeBytes && <span>{(data.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>}
-              <span>{t('analyses.uploaded_at')}: {format(new Date(data.uploadedAt), 'd MMMM yyyy, HH:mm', { locale: dateLocale })}</span>
+              <span>{t('analyses.uploaded_at')}: {format(new Date(data.uploadedAt), 'dd/MM/yyyy, HH:mm', { locale: dateLocale })}</span>
             </div>
           </div>
         </div>
@@ -120,7 +120,7 @@ export default function AnalysisDetailPage() {
             </div>
           )}
           {data.analyzedAt && (
-            <p className="text-xs text-gray-400 mt-4">{t('analyses.analyzed_at')}: {format(new Date(data.analyzedAt), 'd MMMM yyyy, HH:mm', { locale: dateLocale })}</p>
+            <p className="text-xs text-gray-400 mt-4">{t('analyses.analyzed_at')}: {format(new Date(data.analyzedAt), 'dd/MM/yyyy, HH:mm', { locale: dateLocale })}</p>
           )}
         </Card>
       )}
@@ -142,7 +142,7 @@ export default function AnalysisDetailPage() {
               <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">{t('analyses.doctor_label')}</p>
               <p className="font-semibold text-gray-900">{data.validatedByDoctorName}</p>
               {data.validatedAt && (
-                <p className="text-xs text-gray-500 mt-0.5">{format(new Date(data.validatedAt), 'd MMM yyyy', { locale: dateLocale })}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{format(new Date(data.validatedAt), 'dd/MM/yyyy', { locale: dateLocale })}</p>
               )}
             </div>
           </div>

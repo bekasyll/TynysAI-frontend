@@ -5,7 +5,7 @@ import type { TFunction } from 'i18next';
 import { useForm } from 'react-hook-form';
 import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
 import Button from '../../components/ui/Button';
-import logoIcon from '../../assets/logo-background-removed.png';
+import logoIcon from '../../assets/TynysAI-logo.png';
 import { setLanguage } from '../../i18n';
 import { useToast } from '../../components/ui/Toast';
 import { useAuthStore } from '../../store/auth.store';
@@ -69,23 +69,23 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4"
+      className="min-h-screen flex items-center justify-center px-3 py-6 sm:p-4"
       style={{ background: 'linear-gradient(135deg, #0C1A2E 0%, #0E2A45 50%, #0C2030 100%)' }}
     >
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <img src={logoIcon} alt="TynysAI" className="h-14 w-14 object-contain" />
-            <span className="text-white font-bold text-3xl tracking-tight">TynysAI</span>
+            <img src={logoIcon} alt="TynysAI" className="h-12 w-12 sm:h-14 sm:w-14 object-contain" />
+            <span className="text-white font-bold text-2xl sm:text-3xl tracking-tight">TynysAI</span>
           </div>
-          <p className="text-slate-400 mt-1 text-sm">{t('auth.subtitle')}</p>
+          <p className="text-slate-400 mt-1 text-xs sm:text-sm">{t('auth.subtitle')}</p>
         </div>
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="bg-white rounded-2xl shadow-2xl p-8 space-y-4"
+          className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 space-y-4"
         >
-          <h2 className="text-xl font-semibold text-gray-900">{t('auth.login_title')}</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">{t('auth.login_title')}</h2>
           <p className="text-sm text-gray-500 -mt-2">
             {t('auth.login_subtitle')}
           </p>
@@ -99,6 +99,7 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 autoFocus
+                inputMode="email"
                 className={`form-input pl-9 ${errors.email ? 'border-red-400' : ''}`}
                 {...register('email', {
                   required: t('common.required'),
@@ -114,7 +115,15 @@ export default function LoginPage() {
 
           {/* password */}
           <div>
-            <label className="form-label">{t('auth.password')}</label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="form-label">{t('auth.password')}</label>
+              <Link
+                to="/forgot-password"
+                className="text-xs text-blue-600 hover:underline font-medium whitespace-nowrap"
+              >
+                {t('auth.forgot_password')}
+              </Link>
+            </div>
             <div className="relative">
               <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -128,6 +137,7 @@ export default function LoginPage() {
                 onClick={() => setShowPassword((v) => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>

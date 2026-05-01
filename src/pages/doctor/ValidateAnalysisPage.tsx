@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { Brain, UserCheck, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Brain, UserCheck, CheckCircle, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { xraysApi } from '../../api/xrays.api';
 import { StatusBadge } from '../../components/ui/Badge';
@@ -9,6 +9,7 @@ import { PageSpinner } from '../../components/ui/Spinner';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { useApiMutation } from '../../hooks/useApiMutation';
+import { xrayDetailRefetch } from '../../hooks/useXrayAutoRefresh';
 import { DISEASE_TYPES } from '../../types';
 import type { DoctorValidationRequest } from '../../types';
 
@@ -20,6 +21,10 @@ export default function ValidateAnalysisPage() {
   const { data: analysis, isLoading } = useQuery({
     queryKey: ['doctor-analysis', analysisId],
     queryFn: async () => { const r = await xraysApi.getDoctorOne(analysisId!); return r.data.data!; },
+    // Auto-poll while the AI is still working (PENDING/PROCESSING). Stops as
+    // soon as the analysis lands in a terminal status, so we're not hammering
+    // the API after the result is final.
+    refetchInterval: xrayDetailRefetch,
   });
 
   const { register, handleSubmit, watch, setValue, formState: { isSubmitting } } = useForm<DoctorValidationRequest>({
@@ -44,6 +49,16 @@ export default function ValidateAnalysisPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        icon={<ArrowLeft size={16} />}
+        onClick={() => navigate(-1)}
+      >
+        {t('common.back')}
+      </Button>
+
       <Card>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-900">{t('validate.file_info')}</h3>

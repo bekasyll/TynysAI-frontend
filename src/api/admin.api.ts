@@ -2,7 +2,7 @@ import apiClient from './client';
 import type {
   ApiResponse, PageResponse,
   AdminStatsResponse, UserResponse,
-  DoctorProfileResponse, Role,
+  DoctorProfileResponse, Role, WorkSchedule,
 } from '../types';
 import type {
   RegisterDoctorRequest,
@@ -20,17 +20,17 @@ export const adminApi = {
   getStats: () =>
     apiClient.get<ApiResponse<AdminStatsResponse>>('/admin/stats'),
 
-  getUsers: (page = 0, size = 20) =>
+  getUsers: (page = 0, size = 10) =>
     apiClient.get<ApiResponse<PageResponse<UserResponse>>>(
       `/admin/users?page=${page}&size=${size}`
     ),
 
-  getUsersByRole: (role: Role, page = 0, size = 20) =>
+  getUsersByRole: (role: Role, page = 0, size = 10) =>
     apiClient.get<ApiResponse<PageResponse<UserResponse>>>(
       `/admin/users/by-role?role=${role}&page=${page}&size=${size}`
     ),
 
-  searchUsers: (query: string, role?: Role, page = 0, size = 20) => {
+  searchUsers: (query: string, role?: Role, page = 0, size = 10) => {
     const params = new URLSearchParams({ query, page: String(page), size: String(size) });
     if (role) params.set('role', role);
     return apiClient.get<ApiResponse<PageResponse<UserResponse>>>(
@@ -52,27 +52,27 @@ export const adminApi = {
   deleteUser: (userId: string) =>
     apiClient.delete<ApiResponse<void>>(`/admin/users/${userId}`),
 
-  resetUserPassword: (userId: string, newPassword: string, temporary = true) =>
-    apiClient.post<ApiResponse<void>>(`/admin/users/${userId}/reset-password`, {
-      newPassword,
-      temporary,
-    }),
-
-  sendVerifyEmail: (userId: string) =>
-    apiClient.post<ApiResponse<void>>(`/admin/users/${userId}/send-verify-email`),
-
   logoutSessions: (userId: string) =>
     apiClient.post<ApiResponse<void>>(`/admin/users/${userId}/logout-sessions`),
 
   // ----- doctor approvals -----
-  getPendingDoctors: (page = 0, size = 20) =>
-    apiClient.get<ApiResponse<PageResponse<DoctorProfileResponse>>>(
-      `/admin/doctors/pending?page=${page}&size=${size}`
-    ),
+  getPendingDoctors: (page = 0, size = 10, q?: string) => {
+    const params = new URLSearchParams({ page: String(page), size: String(size) });
+    if (q) params.set('q', q);
+    return apiClient.get<ApiResponse<PageResponse<DoctorProfileResponse>>>(
+      `/admin/doctors/pending?${params}`
+    );
+  },
 
   approveDoctor: (doctorId: number | string) =>
     apiClient.patch<ApiResponse<DoctorProfileResponse>>(`/admin/doctors/${doctorId}/approve`),
 
   rejectDoctor: (doctorId: number | string) =>
-    apiClient.patch<ApiResponse<DoctorProfileResponse>>(`/admin/doctors/${doctorId}/reject`),
+    apiClient.patch<ApiResponse<void>>(`/admin/doctors/${doctorId}/reject`),
+
+  updateDoctorWorkSchedule: (doctorUserId: string, workSchedule: WorkSchedule | null) =>
+    apiClient.put<ApiResponse<DoctorProfileResponse>>(
+      `/admin/doctors/${doctorUserId}/work-schedule`,
+      { workSchedule },
+    ),
 };

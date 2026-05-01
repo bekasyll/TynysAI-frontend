@@ -20,7 +20,22 @@
     "required": "Required field",
     "min_chars": "Min. {{n}} characters",
     "not_found": "Not found",
-    "action_irreversible": "This action is irreversible."
+    "action_irreversible": "This action is irreversible.",
+    "clear_filters": "Clear filters",
+    "any_status": "Any status",
+    "any_diagnosis": "Any diagnosis",
+    "any_severity": "Any severity",
+    "any_test_type": "Any test type",
+    "no_filter_match": "Nothing matches",
+    "try_clear_filters": "Try clearing filters or change the search",
+    "search_patient_diagnosis": "Patient name, diagnosis, notes...",
+    "search_diagnosis_notes": "Diagnosis, notes, file name...",
+    "search_test_type_notes": "Test type, lab name, notes...",
+    "search_doctor_credentials": "Name, specialization, license, clinic...",
+    "search_report_text": "Patient name, diagnosis, report text...",
+    "search_my_report_text": "Diagnosis, findings, report text...",
+    "search_patient_name": "Patient name...",
+    "search_doctor_name": "Doctor name..."
   },
   "lang": {
     "ru": "Русский",
@@ -56,7 +71,7 @@
     "PENDING": "Pending",
     "PROCESSING": "Processing",
     "COMPLETED": "Completed",
-    "REQUIRES_REVIEW": "Awaiting Doctor's Report",
+    "REQUIRES_REVIEW": "Under review",
     "VALIDATED": "Validated",
     "FAILED": "Failed"
   },
@@ -132,6 +147,7 @@
     "REPORT_UPDATED": "Report Updated",
     "LAB_RESULT_ADDED": "Lab Result Added",
     "DOCTOR_MESSAGE": "Doctor Message",
+    "DOCTOR_PENDING_APPROVAL": "Doctor Awaiting Approval",
     "ACCOUNT_VERIFIED": "Account Verified",
     "SYSTEM": "System"
   },
@@ -149,6 +165,7 @@
     "REPORT_UPDATED": "Diagnostic report has been updated",
     "LAB_RESULT_ADDED": "Lab result added: {{testType}}",
     "DOCTOR_MESSAGE": "New message from Dr. {{doctorName}}",
+    "DOCTOR_PENDING_APPROVAL": "Dr. {{doctorName}} ({{doctorEmail}}) is awaiting approval",
     "ACCOUNT_VERIFIED": "Your account has been verified",
     "SYSTEM": "{{message}}"
   },
@@ -185,8 +202,15 @@
     "placeholder_first_name": "Azamat",
     "placeholder_last_name": "Akhmetov",
     "placeholder_email": "azamat@hospital.kz",
-    "placeholder_email_login": "user@hospital.kz",
-    "login_subtitle": "Enter your email and password to sign in."
+    "placeholder_email_login": "user@tynysai.com",
+    "login_subtitle": "Enter your email and password to sign in.",
+    "forgot_password": "Forgot password?",
+    "forgot_password_title": "Reset password",
+    "forgot_password_subtitle": "Enter the email tied to your account and we'll send you a reset link.",
+    "forgot_password_btn": "Send reset link",
+    "forgot_password_sent": "The reset link has been sent. Check your inbox.",
+    "forgot_password_back": "Back to login",
+    "forgot_password_error": "Could not send the email. Please try again later."
   },
   "profile": {
     "tabs_medical": "Medical Data",
@@ -228,7 +252,8 @@
     "password_changed": "Password changed",
     "save_error": "Error saving",
     "wrong_password": "Wrong current password or error",
-    "age_years": "{{age}} y.o.",
+    "age_years_one": "{{count}} y.o.",
+    "age_years_other": "{{count}} y.o.",
     "middle_name": "Middle name"
   },
   "analyses": {
@@ -333,7 +358,11 @@
     "success": "Appointment request sent to doctor",
     "cancel_success": "Appointment cancelled",
     "cancel_error": "Error cancelling appointment",
-    "book_error": "Error booking appointment"
+    "book_error": "Error booking appointment",
+    "pick_doctor_first": "Pick a doctor first",
+    "no_schedule_for_day": "Doctor has no working hours on this day",
+    "slot_booked": "Already booked",
+    "slot_too_soon": "Too soon to book - choose a later time"
   },
   "doctor_appointments": {
     "title": "Appointments",
@@ -419,7 +448,8 @@
     "col_age": "Age",
     "col_blood_type": "Blood Type",
     "not_found": "Patient not found",
-    "age_years": "{{age}} y.o.",
+    "age_years_one": "{{count}} y.o.",
+    "age_years_other": "{{count}} y.o.",
     "tab_analyses": "Scans ({{n}})",
     "tab_labs": "Labs ({{n}})",
     "tab_reports": "Reports ({{n}})",
@@ -448,7 +478,14 @@
     "upload_xray": "Upload X-ray",
     "upload_xray_for": "Uploading scan for",
     "forbidden_hint": "Your profile may not yet be approved by an administrator.",
-    "forbidden_title": "Access denied"
+    "forbidden_title": "Access denied",
+    "tab_lab": "Lab tests ({{n}})",
+    "no_lab": "No lab tests",
+    "col_lab_test": "Test",
+    "col_lab_lab": "Laboratory",
+    "col_lab_doctor": "Added by",
+    "assigned_to_other": "Other doctor",
+    "assigned_to_other_full": "This scan is assigned to another doctor - only they can validate it"
   },
   "validate": {
     "title": "Doctor's Conclusion",
@@ -467,7 +504,8 @@
     "comment_placeholder": "Clinical observations, recommendations...",
     "confirm_btn": "Confirm Diagnosis",
     "success": "Diagnosis confirmed",
-    "error": "Validation error"
+    "error": "Validation error",
+    "refresh_ai": "Refresh"
   },
   "create_report": {
     "base_info": "Basic Information",
@@ -496,7 +534,10 @@
     "send_to_patient": "Send report to patient immediately after creation",
     "submit_btn": "Create Report",
     "success": "Report created",
-    "error": "Error creating report"
+    "error": "Error creating report",
+    "xray_label": "Patient X-ray",
+    "no_xray": "No X-ray attached",
+    "no_xrays_for_patient": "This patient has no scans assigned to you"
   },
   "doctor_reports": {
     "empty": "No reports yet",
@@ -584,6 +625,7 @@
     "phone": "Phone",
     "approvals_empty": "No pending approvals",
     "approvals_empty_sub": "All doctors are verified",
+    "doctor_details_title": "Doctor details",
     "specialization_label": "Specialization",
     "license_label": "License",
     "clinic_label": "Clinic",
@@ -622,29 +664,21 @@
     "delete_btn": "Delete",
     "delete_msg": "The account will be deleted both in Keycloak and locally. Related profiles (patient/doctor) will also be removed. This action is irreversible.",
     "delete_title": "Delete user?",
-    "hide": "Hide",
-    "new_password": "New password",
     "not_verified": "unverified",
-    "password_min_hint": "at least 8 characters",
-    "password_reset_done": "Password updated",
-    "reset_password_btn": "Reset password",
-    "reset_password_title": "Reset password",
     "sessions_btn": "End",
     "sessions_btn_short": "End sessions",
     "sessions_msg": "All active refresh tokens will be revoked. The user will have to sign in again.",
     "sessions_revoked": "Sessions terminated",
     "sessions_title": "End all sessions?",
-    "show": "Show",
-    "temporary_password": "Temporary password",
-    "temporary_password_hint": "The user will be required to change it on next sign-in.",
     "unblock_btn": "Unblock",
     "unblock_msg": "The user will be able to sign in again.",
     "unblock_title": "Unblock user?",
     "unblocked": "User unblocked",
-    "verify_btn": "Verification email",
-    "verify_msg": "Keycloak will send the user an email with a link to verify their address. SMTP must be configured.",
-    "verify_sent": "Verification email sent",
-    "verify_title": "Send verification email?"
+    "edit_schedule_btn": "Edit schedule",
+    "work_schedule_title": "Work schedule",
+    "add_interval": "Add interval",
+    "no_intervals": "Day off",
+    "work_schedule_saved": "Work schedule saved"
   },
   "notifications": {
     "empty": "No notifications",
@@ -662,7 +696,9 @@
     "delete_error": "Delete error"
   },
   "pagination": {
-    "of": "of"
+    "of": "of",
+    "prev": "Previous page",
+    "next": "Next page"
   },
   "appointment_detail": {
     "complaints_label": "Patient Complaints",
@@ -699,5 +735,14 @@
     "section_professional": "Professional details",
     "submit": "Create account"
   },
-  "scope": "openid"
+  "scope": "openid",
+  "weekday": {
+    "MONDAY": "Monday",
+    "TUESDAY": "Tuesday",
+    "WEDNESDAY": "Wednesday",
+    "THURSDAY": "Thursday",
+    "FRIDAY": "Friday",
+    "SATURDAY": "Saturday",
+    "SUNDAY": "Sunday"
+  }
 }

@@ -18,7 +18,7 @@ export const patientsApi = {
   getByUserId: (userId: string) =>
     apiClient.get<ApiResponse<PatientProfileResponse>>(`/patients/${userId}`),
 
-  list: (page = 0, size = 20) =>
+  list: (page = 0, size = 10) =>
     apiClient.get<ApiResponse<PageResponse<PatientProfileResponse>>>(
       `/patients?page=${page}&size=${size}`
     ),

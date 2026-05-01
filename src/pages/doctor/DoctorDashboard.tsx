@@ -70,7 +70,7 @@ export default function DoctorDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 text-sm">{p.fullName}</p>
-                    <p className="text-xs text-gray-500">{p.email}{p.age ? ` · ${t('profile.age_years', { age: p.age })}` : ''}</p>
+                    <p className="text-xs text-gray-500">{p.email}{p.age && p.age > 0 ? ` · ${t('profile.age_years', { count: p.age })}` : ''}</p>
                   </div>
                   <ChevronRight size={14} className="text-gray-400 shrink-0" />
                 </Link>
@@ -97,7 +97,7 @@ export default function DoctorDashboard() {
                     <p className="font-medium text-gray-900 text-sm break-words">
                       {r.finalDiagnosisDisplayName ?? t('disease.' + r.finalDiagnosis)}
                     </p>
-                    <p className="text-xs text-gray-500">{r.patientName} · {format(new Date(r.createdAt), 'd MMM yyyy', { locale: dateLocale })}</p>
+                    <p className="text-xs text-gray-500">{r.patientName} · {format(new Date(r.createdAt), 'dd/MM/yyyy', { locale: dateLocale })}</p>
                   </div>
                   <SeverityBadge severity={r.severity} />
                 </div>

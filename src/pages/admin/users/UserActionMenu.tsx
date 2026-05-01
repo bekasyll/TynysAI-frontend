@@ -1,13 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  ToggleLeft, ToggleRight, Trash2, KeyRound,
-  LogOut as LogOutIcon, MoreVertical, ShieldCheck,
+  ToggleLeft, ToggleRight, Trash2,
+  LogOut as LogOutIcon, MoreVertical, CalendarClock,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { UserResponse } from '../../../types';
 
-export type ActionKind = 'delete' | 'toggle' | 'verify' | 'sessions' | 'reset';
+export type ActionKind = 'delete' | 'toggle' | 'sessions' | 'edit-schedule';
 
 // Menu is rendered through a portal into document.body so it escapes the
 // table's `overflow-hidden` wrapper. Position is recomputed from the trigger's
@@ -82,16 +82,11 @@ export default function UserActionMenu({ user, open, onToggle, onClose, onAction
                 : t('admin.unblock_btn')}
               onClick={() => onAction('toggle')}
             />
-            <MenuItem
-              icon={<KeyRound size={14} className="text-blue-500" />}
-              label={t('admin.reset_password_btn')}
-              onClick={() => onAction('reset')}
-            />
-            {!user.emailVerified && (
+            {user.role === 'DOCTOR' && (
               <MenuItem
-                icon={<ShieldCheck size={14} className="text-emerald-500" />}
-                label={t('admin.verify_btn')}
-                onClick={() => onAction('verify')}
+                icon={<CalendarClock size={14} className="text-blue-500" />}
+                label={t('admin.edit_schedule_btn')}
+                onClick={() => onAction('edit-schedule')}
               />
             )}
             <MenuItem
@@ -124,12 +119,12 @@ function MenuItem({
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+      className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors min-w-0 ${
         danger ? 'text-red-600 hover:bg-red-50' : 'text-gray-700 hover:bg-gray-50'
       }`}
     >
-      {icon}
-      <span>{label}</span>
+      <span className="shrink-0">{icon}</span>
+      <span className="truncate min-w-0">{label}</span>
     </button>
   );
 }

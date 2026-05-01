@@ -23,7 +23,9 @@ export default function AppointmentDetailPage() {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
 
-  const [action, setAction] = useState<'accept' | 'reject' | null>(null);
+  // Reject keeps a notes field (the reason ends up on the patient's
+  // notification). Accept doesn't - just one click and we're done.
+  const [action, setAction] = useState<'reject' | null>(null);
   const [notes, setNotes] = useState('');
 
   const { data: appt, isLoading } = useQuery({
@@ -45,7 +47,7 @@ export default function AppointmentDetailPage() {
   }
 
   const acceptMutation = useApiMutation(
-    () => appointmentsApi.accept(appointmentId!, { doctorNotes: notes || undefined }),
+    () => appointmentsApi.accept(appointmentId!, {}),
     {
       successMessage: t('doctor_appointments.accept_success'),
       errorMessage: t('doctor_appointments.accept_error'),
@@ -89,7 +91,7 @@ export default function AppointmentDetailPage() {
               {appt.appointmentDate && (
                 <div className="flex items-center gap-1.5 text-sm text-gray-500 mt-0.5">
                   <CalendarDays size={14} />
-                  {format(new Date(appt.appointmentDate), 'd MMMM yyyy, HH:mm', { locale: dateLocale })}
+                  {format(new Date(appt.appointmentDate), 'dd/MM/yyyy, HH:mm', { locale: dateLocale })}
                 </div>
               )}
             </div>
@@ -118,27 +120,16 @@ export default function AppointmentDetailPage() {
 
           {!action && (
             <div className="flex gap-3">
-              <Button icon={<Check size={16} />} onClick={() => setAction('accept')}>
+              <Button
+                icon={<Check size={16} />}
+                loading={acceptMutation.isPending}
+                onClick={() => acceptMutation.mutate()}
+              >
                 {t('doctor_appointments.accept_btn')}
               </Button>
               <Button variant="outline" icon={<X size={16} />} onClick={() => setAction('reject')}>
                 {t('doctor_appointments.reject_btn')}
               </Button>
-            </div>
-          )}
-
-          {action === 'accept' && (
-            <div className="space-y-3 max-w-md">
-              <div>
-                <label className="form-label">{t('doctor_appointments.notes_label')}</label>
-                <textarea className="form-input resize-none" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
-              </div>
-              <div className="flex gap-2">
-                <Button icon={<Check size={14} />} loading={acceptMutation.isPending} onClick={() => acceptMutation.mutate()}>
-                  {t('appointment_detail.confirm_accept')}
-                </Button>
-                <Button variant="secondary" onClick={() => setAction(null)}>{t('common.cancel')}</Button>
-              </div>
             </div>
           )}
 

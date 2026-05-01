@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/auth.store';
 import { usersApi } from '../../api/users.api';
 import { setLanguage } from '../../i18n';
-import logoIcon from '../../assets/logo-background-removed.png';
+import logoIcon from '../../assets/TynysAI-logo.png';
 
 interface SidebarProps {
   isOpen: boolean;

@@ -20,15 +20,42 @@ import Modal from '../../components/ui/Modal';
 import { useDateLocale } from '../../hooks/useDateLocale';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { useApiMutation } from '../../hooks/useApiMutation';
-import type { AppointmentRequest, AppointmentResponse, AppointmentStatus } from '../../types';
+import type {
+  AppointmentRequest, AppointmentResponse, AppointmentStatus,
+  TimeRange, DayOfWeek,
+} from '../../types';
 
 const FILTERS: (AppointmentStatus | 'ALL')[] = ['ALL', 'PENDING', 'ACCEPTED', 'COMPLETED', 'CANCELLED'];
 
-const TIME_SLOTS = Array.from({ length: 18 }, (_, i) => {
-  const h = Math.floor(i / 2) + 9;
-  const m = i % 2 === 0 ? '00' : '30';
-  return `${String(h).padStart(2, '0')}:${m}`;
-});
+// JS Date.getDay(): 0=Sun..6=Sat. Map to Java DayOfWeek names.
+const JS_DOW_TO_JAVA: DayOfWeek[] = [
+  'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY',
+];
+
+function dayOfWeekFor(d: Date): DayOfWeek {
+  return JS_DOW_TO_JAVA[d.getDay()];
+}
+
+/**
+ * Generates 30-min slot starts (HH:mm) covering the given working intervals.
+ * A 30-min slot is included only if a full 30 minutes fits before the
+ * interval's end - so a 09:00-09:25 interval yields no slots.
+ */
+function generateSlots(intervals: TimeRange[]): string[] {
+  const out: string[] = [];
+  for (const r of intervals) {
+    const [sh, sm] = r.start.split(':').map(Number);
+    const [eh, em] = r.end.split(':').map(Number);
+    let cur = sh * 60 + sm;
+    const end = eh * 60 + em;
+    while (cur + 30 <= end) {
+      const h = Math.floor(cur / 60), m = cur % 60;
+      out.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+      cur += 30;
+    }
+  }
+  return out;
+}
 
 interface BookFormValues {
   doctorId: string;
@@ -52,7 +79,7 @@ export default function AppointmentsPage() {
 
   const status = filter === 'ALL' ? undefined : filter;
 
-  const { items, pagination, isLoading, setPage } = usePagedQuery(
+  const { items, pagination, isLoading } = usePagedQuery(
     ['patient-appointments', filter],
     (p) => appointmentsApi.listForPatient(status, p).then((r) => r.data.data!),
   );
@@ -69,7 +96,37 @@ export default function AppointmentsPage() {
     enabled: showForm,
   });
 
-  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<BookFormValues>();
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<BookFormValues>();
+  const selectedDoctorId = watch('doctorId');
+  const selectedDoctor = doctorsData?.content.find((d) => d.userId === selectedDoctorId);
+
+  const busyDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
+  const { data: busySlots } = useQuery({
+    queryKey: ['busy-slots', selectedDoctorId, busyDate],
+    queryFn: async () => {
+      const r = await appointmentsApi.getBusySlots(selectedDoctorId!, busyDate!);
+      return r.data.data ?? [];
+    },
+    enabled: !!selectedDoctorId && !!busyDate,
+  });
+  const busySet = new Set(busySlots ?? []);
+
+  const dayIntervals: TimeRange[] = (selectedDoctor && selectedDate
+    ? selectedDoctor.workSchedule?.[dayOfWeekFor(selectedDate)] ?? []
+    : []);
+  const availableSlots = generateSlots(dayIntervals);
+
+  // Patient can't grab a slot less than 20 min from now. The same check also
+  // hides past-time slots when the chosen date is today (negative diff < 20).
+  // Future dates pass trivially since the diff is huge.
+  const MIN_LEAD_MS = 20 * 60 * 1000;
+  function isTooSoon(time: string): boolean {
+    if (!selectedDate) return false;
+    const [h, m] = time.split(':').map(Number);
+    const dt = new Date(selectedDate);
+    dt.setHours(h, m, 0, 0);
+    return dt.getTime() - Date.now() < MIN_LEAD_MS;
+  }
 
   function selectDateTime(date: Date | null, time: string | null) {
     if (date && time) {
@@ -148,7 +205,7 @@ export default function AppointmentsPage() {
           {FILTERS.map((f) => (
             <button
               key={f}
-              onClick={() => { setFilter(f); setPage(0); }}
+              onClick={() => setFilter(f)}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                 filter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}
@@ -259,31 +316,59 @@ export default function AppointmentsPage() {
                         : t('appointments.pick_date_first')}
                     </span>
                   </div>
-                  <div className={`grid grid-cols-3 gap-2 ${!selectedDate ? 'opacity-40 pointer-events-none' : ''}`}>
-                    {TIME_SLOTS.map((time) => (
-                      <button
-                        key={time}
-                        type="button"
-                        onClick={() => handleTimeSelect(time)}
-                        className={`
-                          py-2 px-3 rounded-lg text-sm font-medium border transition-all
-                          ${selectedTime === time
-                            ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                            : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
-                          }
-                        `}
-                      >
-                        {time}
-                      </button>
-                    ))}
-                  </div>
+                  {!selectedDoctorId ? (
+                    <div className="text-sm text-gray-400 italic py-3">
+                      {t('appointments.pick_doctor_first')}
+                    </div>
+                  ) : !selectedDate ? (
+                    <div className="text-sm text-gray-400 italic py-3">
+                      {t('appointments.pick_date_first')}
+                    </div>
+                  ) : availableSlots.length === 0 ? (
+                    <div className="text-sm text-amber-600 py-3">
+                      {t('appointments.no_schedule_for_day')}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      {availableSlots.map((time) => {
+                        const isBusy = busySet.has(time);
+                        const tooSoon = isTooSoon(time);
+                        const disabled = isBusy || tooSoon;
+                        const tooltip = isBusy
+                          ? t('appointments.slot_booked')
+                          : tooSoon
+                            ? t('appointments.slot_too_soon')
+                            : undefined;
+                        return (
+                          <button
+                            key={time}
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => !disabled && handleTimeSelect(time)}
+                            title={tooltip}
+                            className={`
+                              py-2 px-3 rounded-lg text-sm font-medium border transition-all
+                              ${disabled
+                                ? 'bg-gray-100 border-gray-200 text-gray-400 line-through cursor-not-allowed'
+                                : selectedTime === time
+                                ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                                : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+                              }
+                            `}
+                          >
+                            {time}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {selectedDate && selectedTime && (
                 <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
                   <CalendarDays size={14} />
-                  {format(selectedDate, 'd MMMM yyyy', { locale: dateLocale })} · {selectedTime}
+                  {format(selectedDate, 'dd/MM/yyyy', { locale: dateLocale })} · {selectedTime}
                 </div>
               )}
 
@@ -311,7 +396,7 @@ export default function AppointmentsPage() {
                       {a.aiPrimaryDiagnosisDisplayName ?? a.aiPrimaryDiagnosis}
                       {a.aiConfidence != null ? ` (${Math.round(a.aiConfidence * 100)}%)` : ''}
                       {' · '}
-                      {format(new Date(a.uploadedAt), 'd MMM yyyy', { locale: dateLocale })}
+                      {format(new Date(a.uploadedAt), 'dd/MM/yyyy', { locale: dateLocale })}
                     </option>
                   ))}
               </select>
@@ -361,13 +446,13 @@ export default function AppointmentsPage() {
                         {a.doctorSpecialization && <p className="text-xs text-gray-400 break-words">{a.doctorSpecialization}</p>}
                         <p className="md:hidden text-xs text-gray-500 mt-0.5 break-words">
                           {a.appointmentDate
-                            ? format(new Date(a.appointmentDate), 'd MMM yyyy, HH:mm', { locale: dateLocale })
+                            ? format(new Date(a.appointmentDate), 'dd/MM/yyyy, HH:mm', { locale: dateLocale })
                             : '-'}
                         </p>
                       </td>
                       <td className="hidden md:table-cell px-6 py-4 text-gray-600 break-words">
                         {a.appointmentDate
-                          ? format(new Date(a.appointmentDate), 'd MMM yyyy, HH:mm', { locale: dateLocale })
+                          ? format(new Date(a.appointmentDate), 'dd/MM/yyyy, HH:mm', { locale: dateLocale })
                           : '-'}
                       </td>
                       <td className="hidden lg:table-cell px-6 py-4 text-gray-600 break-words">{a.patientComplaints ?? '-'}</td>
@@ -426,7 +511,7 @@ export default function AppointmentsPage() {
               <span className="text-xs text-gray-400 uppercase tracking-wide pt-0.5 shrink-0">{t('appointments.col_date')}</span>
               <span className="text-sm text-gray-900 text-right break-words min-w-0">
                 {selectedAppt.appointmentDate
-                  ? format(new Date(selectedAppt.appointmentDate), 'd MMMM yyyy, HH:mm', { locale: dateLocale })
+                  ? format(new Date(selectedAppt.appointmentDate), 'dd/MM/yyyy, HH:mm', { locale: dateLocale })
                   : '-'}
               </span>
             </div>

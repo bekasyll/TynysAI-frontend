@@ -95,7 +95,11 @@ export default function DoctorProfilePage() {
           <button
             key={tab_.key}
             onClick={() => setTab(tab_.key)}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`flex-1 py-2 font-medium rounded-lg transition-colors ${
+              // Only the "professional profile" label is long enough to wrap
+              // on narrow screens - shrink just that one to xs on mobile.
+              tab_.key === 'profile' ? 'text-xs sm:text-sm' : 'text-sm'
+            } ${
               tab === tab_.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
           >

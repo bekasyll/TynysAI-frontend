@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, type QueryKey } from '@tanstack/react-query';
 import type { PageResponse } from '../types';
 
@@ -14,7 +14,15 @@ export function usePagedQuery<T>(
   fetcher: (page: number) => Promise<PageResponse<T>>,
   opts: Options<T> = {},
 ) {
-  const [page, setPage] = useState(opts.initialPage ?? 0);
+  const initialPage = opts.initialPage ?? 0;
+  const [page, setPage] = useState(initialPage);
+
+  // baseKey carries filter values (e.g. ['admin-reports', search, severity]).
+  // When any filter flips, jump back to page 0 so the user isn't stranded
+  // on page 5 of a now-much-shorter result set. Stringified so array
+  // identity changes (which happen on every render) don't trigger resets.
+  const baseKeyStr = JSON.stringify(baseKey);
+  useEffect(() => { setPage(initialPage); }, [baseKeyStr]);
 
   const query = useQuery({
     queryKey: [...baseKey, page],

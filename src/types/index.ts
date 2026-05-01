@@ -58,6 +58,7 @@ export type NotificationType =
   | 'REPORT_UPDATED'
   | 'LAB_RESULT_ADDED'
   | 'DOCTOR_MESSAGE'
+  | 'DOCTOR_PENDING_APPROVAL'
   | 'ACCOUNT_VERIFIED'
   | 'SYSTEM';
 
@@ -154,6 +155,26 @@ export interface UpdatePatientProfileRequest {
 
 // ==================== DOCTOR PROFILE ====================
 
+export type DayOfWeek =
+  | 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+
+export const DAYS_OF_WEEK: DayOfWeek[] = [
+  'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY',
+];
+
+/** Single working interval inside a weekday. Times are "HH:mm" strings. */
+export interface TimeRange {
+  start: string;
+  end: string;
+}
+
+/**
+ * Doctor's weekly work schedule. Keys are DayOfWeek names (matches Java
+ * DayOfWeek enum), values are arrays of intervals. Missing or empty array
+ * for a day means "doesn't work that day".
+ */
+export type WorkSchedule = Partial<Record<DayOfWeek, TimeRange[]>>;
+
 export interface DoctorProfileResponse {
   id: number;
   userId: string;
@@ -174,7 +195,7 @@ export interface DoctorProfileResponse {
   bio?: string;
   education?: string;
   approved: boolean;
-  workSchedule?: string;
+  workSchedule?: WorkSchedule;
   profileCreatedAt: string;
 }
 
@@ -188,7 +209,7 @@ export interface UpdateDoctorProfileRequest {
   yearsOfExperience?: number;
   bio?: string;
   education?: string;
-  workSchedule?: string;
+  workSchedule?: WorkSchedule;
 }
 
 // ==================== X-RAY ANALYSIS ====================
@@ -438,6 +459,10 @@ export const DISEASE_TYPES: DiseaseType[] = [
 ];
 
 export const SEVERITY_TYPES: Severity[] = ['NONE', 'MILD', 'MODERATE', 'SEVERE', 'CRITICAL'];
+
+export const ANALYSIS_STATUSES: AnalysisStatus[] = [
+  'PENDING', 'PROCESSING', 'COMPLETED', 'REQUIRES_REVIEW', 'VALIDATED', 'FAILED',
+];
 
 export const LAB_TEST_TYPES: LabTestType[] = [
   'COMPLETE_BLOOD_COUNT', 'BIOCHEMISTRY', 'SPUTUM_CULTURE', 'PCR_COVID', 'PCR_TB',

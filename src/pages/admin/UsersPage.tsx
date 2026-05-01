@@ -9,12 +9,12 @@ import { useApiMutation } from '../../hooks/useApiMutation';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
 import UsersFilters from './users/UsersFilters';
 import UsersTable from './users/UsersTable';
-import ResetPasswordDialog from './users/ResetPasswordDialog';
 import CreateUserDialog, { type CreateRole } from './users/CreateUserDialog';
+import EditWorkScheduleDialog from './users/EditWorkScheduleDialog';
 import type { ActionKind } from './users/UserActionMenu';
 import type { Role, UserResponse } from '../../types';
 
-type ConfirmKind = 'delete' | 'toggle' | 'verify' | 'sessions' | null;
+type ConfirmKind = 'delete' | 'toggle' | 'sessions' | null;
 
 export default function UsersPage() {
   const [search, setSearch] = useState('');
@@ -22,14 +22,14 @@ export default function UsersPage() {
   const [confirm, setConfirm] = useState<{ kind: ConfirmKind; user: UserResponse | null }>({
     kind: null, user: null,
   });
-  const [resetTarget, setResetTarget] = useState<UserResponse | null>(null);
   const [createRole, setCreateRole] = useState<CreateRole>(null);
+  const [scheduleTargetUserId, setScheduleTargetUserId] = useState<string | null>(null);
 
   const { t } = useTranslation();
   const { success } = useToast();
   const queryClient = useQueryClient();
 
-  const { items, pagination, isLoading, setPage } = usePagedQuery(
+  const { items, pagination, isLoading } = usePagedQuery(
     ['admin-users', roleFilter],
     (p) => (roleFilter
       ? adminApi.getUsersByRole(roleFilter, p)
@@ -77,14 +77,6 @@ export default function UsersPage() {
     },
   );
 
-  const verifyMutation = useApiMutation(
-    (id: string) => adminApi.sendVerifyEmail(id),
-    {
-      successMessage: t('admin.verify_sent'),
-      onSuccess: () => setConfirm({ kind: null, user: null }),
-    },
-  );
-
   const sessionsMutation = useApiMutation(
     (id: string) => adminApi.logoutSessions(id),
     {
@@ -96,8 +88,11 @@ export default function UsersPage() {
   if (isLoading) return <PageSpinner />;
 
   function handleAction(kind: ActionKind, user: UserResponse) {
-    if (kind === 'reset') setResetTarget(user);
-    else setConfirm({ kind, user });
+    if (kind === 'edit-schedule') {
+      setScheduleTargetUserId(user.id);
+    } else {
+      setConfirm({ kind, user });
+    }
   }
 
   return (
@@ -106,7 +101,7 @@ export default function UsersPage() {
         search={search}
         onSearchChange={setSearch}
         roleFilter={roleFilter}
-        onRoleChange={(r) => { setRoleFilter(r); setPage(0); }}
+        onRoleChange={setRoleFilter}
         onCreate={() => setCreateRole('PATIENT')}
       />
 
@@ -138,16 +133,6 @@ export default function UsersPage() {
       />
 
       <ConfirmModal
-        isOpen={confirm.kind === 'verify'}
-        onClose={() => setConfirm({ kind: null, user: null })}
-        onConfirm={() => confirm.user && verifyMutation.mutate(confirm.user.id)}
-        title={t('admin.verify_title')}
-        message={t('admin.verify_msg')}
-        confirmText={t('common.send')}
-        loading={verifyMutation.isPending}
-      />
-
-      <ConfirmModal
         isOpen={confirm.kind === 'sessions'}
         onClose={() => setConfirm({ kind: null, user: null })}
         onConfirm={() => confirm.user && sessionsMutation.mutate(confirm.user.id)}
@@ -155,11 +140,6 @@ export default function UsersPage() {
         message={t('admin.sessions_msg')}
         confirmText={t('admin.sessions_btn')}
         loading={sessionsMutation.isPending}
-      />
-
-      <ResetPasswordDialog
-        user={resetTarget}
-        onClose={() => setResetTarget(null)}
       />
 
       <CreateUserDialog
@@ -170,6 +150,11 @@ export default function UsersPage() {
           invalidate();
           setCreateRole(null);
         }}
+      />
+
+      <EditWorkScheduleDialog
+        userId={scheduleTargetUserId}
+        onClose={() => setScheduleTargetUserId(null)}
       />
     </div>
   );

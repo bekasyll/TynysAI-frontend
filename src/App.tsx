@@ -7,6 +7,7 @@ import type { Role } from './types';
 // Auth
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 
 // Patient
 import PatientDashboard from './pages/patient/PatientDashboard';
@@ -68,6 +69,7 @@ export default function App() {
       {/* Public */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/" element={<RoleRedirect />} />
       <Route path="/unauthorized" element={
         <div className="min-h-screen flex items-center justify-center">

@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, FileImage, Brain, UserCheck, RefreshCw, User } from 'lucide-react';
+import { ArrowLeft, FileImage, Brain, UserCheck, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { xraysApi } from '../../api/xrays.api';
 import { StatusBadge } from '../../components/ui/Badge';
@@ -22,7 +22,7 @@ export default function DoctorAnalysisDetailPage() {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
 
-  const { data, isLoading, refetch, isFetching } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['doctor-analysis', id],
     queryFn: async () => { const r = await xraysApi.getDoctorOne(id!); return r.data.data!; },
     refetchInterval: xrayDetailRefetch,
@@ -41,16 +41,6 @@ export default function DoctorAnalysisDetailPage() {
           <Button variant="ghost" size="sm" icon={<ArrowLeft size={14} />}>{t('common.back')}</Button>
         </Link>
         <StatusBadge status={data.status} />
-        {(data.status === 'PENDING' || data.status === 'PROCESSING') && (
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={<RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />}
-            onClick={() => refetch()}
-          >
-            {t('analyses.refresh')}
-          </Button>
-        )}
         {canValidate && (
           <Button
             size="sm"
@@ -75,7 +65,7 @@ export default function DoctorAnalysisDetailPage() {
               {data.contentType && <span>{data.contentType}</span>}
               {data.fileSizeBytes && <span>{(data.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>}
               <span>
-                {t('analyses.uploaded_at')}: {format(new Date(data.uploadedAt), 'd MMMM yyyy, HH:mm', { locale: dateLocale })}
+                {t('analyses.uploaded_at')}: {format(new Date(data.uploadedAt), 'dd/MM/yyyy, HH:mm', { locale: dateLocale })}
               </span>
             </div>
           </div>
@@ -114,15 +104,6 @@ export default function DoctorAnalysisDetailPage() {
             </div>
             <p className="font-semibold text-gray-900">{t('analyses.processing_title')}</p>
             <p className="text-gray-500 text-sm mt-1">{t('analyses.processing_sub')}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              icon={<RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />}
-              onClick={() => refetch()}
-              className="mt-4"
-            >
-              {t('analyses.refresh')}
-            </Button>
           </div>
         </Card>
       )}
@@ -133,15 +114,6 @@ export default function DoctorAnalysisDetailPage() {
           <div className="flex items-center gap-2 mb-5">
             <Brain size={20} className="text-blue-600" />
             <h3 className="font-semibold text-gray-900">{t('analyses.ai_result')}</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />}
-              onClick={() => refetch()}
-              className="ml-auto"
-            >
-              {t('analyses.refresh')}
-            </Button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
@@ -177,7 +149,7 @@ export default function DoctorAnalysisDetailPage() {
           )}
           {data.analyzedAt && (
             <p className="text-xs text-gray-400 mt-4">
-              {t('analyses.analyzed_at')}: {format(new Date(data.analyzedAt), 'd MMMM yyyy, HH:mm', { locale: dateLocale })}
+              {t('analyses.analyzed_at')}: {format(new Date(data.analyzedAt), 'dd/MM/yyyy, HH:mm', { locale: dateLocale })}
             </p>
           )}
         </Card>
@@ -202,7 +174,7 @@ export default function DoctorAnalysisDetailPage() {
               <p className="font-semibold text-gray-900">{data.validatedByDoctorName}</p>
               {data.validatedAt && (
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {format(new Date(data.validatedAt), 'd MMM yyyy', { locale: dateLocale })}
+                  {format(new Date(data.validatedAt), 'dd/MM/yyyy', { locale: dateLocale })}
                 </p>
               )}
             </div>

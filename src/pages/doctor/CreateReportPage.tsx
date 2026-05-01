@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { FileText, Send, Brain } from 'lucide-react';
+import { FileText, Send, Brain, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { patientsApi } from '../../api/patients.api';
 import { reportsApi } from '../../api/medical-records.api';
@@ -43,33 +43,57 @@ export default function CreateReportPage() {
     queryFn: async () => { const r = await patientsApi.list(0, 100); return r.data.data!; },
   });
 
-  const { data: appointments } = useQuery({
-    queryKey: ['doctor-appointments-accepted', patientId],
-    queryFn: async () => {
-      const r = await appointmentsApi.listForDoctor('ACCEPTED', 0, 50);
-      return r.data.data!.content.filter((a) => !patientId || a.patientId === patientId);
-    },
-    enabled: !!patientId,
-  });
-
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<ReportFormValues>({
     defaultValues: { patientId, appointmentId: appointmentIdParam, severity: 'NONE', sendToPatient: true },
   });
 
   const watchedPatientId = watch('patientId');
+  const watchedXrayId = watch('xrayAnalysisId');
+
+  const { data: appointments } = useQuery({
+    queryKey: ['doctor-appointments-accepted', watchedPatientId],
+    queryFn: async () => {
+      const r = await appointmentsApi.listForDoctor('ACCEPTED', 0, 50);
+      return r.data.data!.content.filter((a) => !watchedPatientId || a.patientId === watchedPatientId);
+    },
+    enabled: !!watchedPatientId,
+  });
+
+  // All x-rays of this doctor, filtered down to the chosen patient.
+  // Lets the doctor pick from any of the patient's scans, not just one
+  // glued to an appointment.
+  const { data: patientXrays } = useQuery({
+    queryKey: ['doctor-assigned-xrays-for-patient', watchedPatientId],
+    queryFn: async () => {
+      const r = await xraysApi.listAssignedToDoctor(0, 100);
+      return r.data.data!.content.filter((x) => x.patientId === watchedPatientId);
+    },
+    enabled: !!watchedPatientId,
+  });
 
   const linkedAppointment = appointments?.find((a) => String(a.id) === appointmentIdParam);
 
+  // Auto-pick the appointment's linked x-ray if the user came in via an
+  // appointment context. Doctor can still override via the select below.
   useEffect(() => {
-    if (linkedAppointment?.xrayAnalysisId != null) {
+    if (linkedAppointment?.xrayAnalysisId != null && !watchedXrayId) {
       setValue('xrayAnalysisId', String(linkedAppointment.xrayAnalysisId));
     }
   }, [linkedAppointment?.xrayAnalysisId]);
 
+  // Reset xray selection when the patient changes - prior pick belongs to
+  // a different patient and would be invalid in the dropdown anyway.
+  useEffect(() => {
+    if (!watchedPatientId) return;
+    if (watchedXrayId && !patientXrays?.some((x) => String(x.id) === watchedXrayId)) {
+      setValue('xrayAnalysisId', '');
+    }
+  }, [watchedPatientId, patientXrays]);
+
   const { data: linkedAnalysis } = useQuery({
-    queryKey: ['doctor-analysis', linkedAppointment?.xrayAnalysisId],
-    queryFn: async () => { const r = await xraysApi.getDoctorOne(linkedAppointment!.xrayAnalysisId!); return r.data.data!; },
-    enabled: linkedAppointment?.xrayAnalysisId != null,
+    queryKey: ['doctor-analysis', watchedXrayId],
+    queryFn: async () => { const r = await xraysApi.getDoctorOne(watchedXrayId!); return r.data.data!; },
+    enabled: !!watchedXrayId,
   });
 
   const mutation = useApiMutation(
@@ -101,7 +125,16 @@ export default function CreateReportPage() {
   if (isLoading) return <PageSpinner />;
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto space-y-4">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        icon={<ArrowLeft size={16} />}
+        onClick={() => navigate(-1)}
+      >
+        {t('common.back')}
+      </Button>
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-6">
         <Card>
           <div className="flex items-center gap-2 mb-5">
@@ -134,6 +167,28 @@ export default function CreateReportPage() {
               </div>
             )}
 
+            {watchedPatientId && (
+              <div>
+                <label className="form-label">{t('create_report.xray_label')}</label>
+                <select className="form-input" {...register('xrayAnalysisId')}>
+                  <option value="">{t('create_report.no_xray')}</option>
+                  {patientXrays?.map((x) => {
+                    const dx = x.aiPrimaryDiagnosisDisplayName
+                      ?? (x.aiPrimaryDiagnosis ? t('disease.' + x.aiPrimaryDiagnosis) : '-');
+                    const date = new Date(x.uploadedAt).toLocaleDateString();
+                    return (
+                      <option key={x.id} value={x.id}>
+                        #{x.id} · {date} · {dx}
+                      </option>
+                    );
+                  })}
+                </select>
+                {patientXrays && patientXrays.length === 0 && (
+                  <p className="text-xs text-gray-400 mt-1">{t('create_report.no_xrays_for_patient')}</p>
+                )}
+              </div>
+            )}
+
             {linkedAnalysis && (
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-2">
                 <div className="flex items-center gap-2">
@@ -157,7 +212,6 @@ export default function CreateReportPage() {
                 {linkedAnalysis.aiFindings && (
                   <p className="text-xs text-gray-600 bg-white rounded-lg p-2">{linkedAnalysis.aiFindings}</p>
                 )}
-                <input type="hidden" {...register('xrayAnalysisId')} />
               </div>
             )}
 

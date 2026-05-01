@@ -3,12 +3,12 @@ import type { ApiResponse, PageResponse, NotificationResponse } from '../types';
 
 /** notification-service: /api/notifications */
 export const notificationsApi = {
-  list: (page = 0, size = 20) =>
+  list: (page = 0, size = 10) =>
     apiClient.get<ApiResponse<PageResponse<NotificationResponse>>>(
       `/notifications?page=${page}&size=${size}`
     ),
 
-  unread: (page = 0, size = 20) =>
+  unread: (page = 0, size = 10) =>
     apiClient.get<ApiResponse<PageResponse<NotificationResponse>>>(
       `/notifications/unread?page=${page}&size=${size}`
     ),

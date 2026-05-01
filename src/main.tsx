@@ -20,8 +20,15 @@ const queryClient = new QueryClient({
 
 function renderApp() {
   useAuthStore.getState().refresh();
+  // Provision the User row on the first paint when we already have a session
+  // (e.g. SSO check on a fresh tab) - otherwise the panel mounts and fires
+  // /api/patients/me before user-service has the User in the DB.
+  void useAuthStore.getState().ensureProfile();
 
-  keycloak.onAuthSuccess = () => useAuthStore.getState().refresh();
+  keycloak.onAuthSuccess = async () => {
+    useAuthStore.getState().refresh();
+    await useAuthStore.getState().ensureProfile();
+  };
   keycloak.onAuthRefreshSuccess = () => useAuthStore.getState().refresh();
   keycloak.onAuthLogout = () => useAuthStore.getState().refresh();
   keycloak.onTokenExpired = () => keycloak.updateToken(30).catch(() => keycloak.logout());
