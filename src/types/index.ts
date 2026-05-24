@@ -229,6 +229,8 @@ export interface XrayAnalysisResponse {
   aiConfidence?: number;
   aiFindings?: string;
   aiDetectedAbnormalities?: string;
+  aiAllPredictionsJson?: string;
+  gradcamAvailable?: boolean;
   validatedByDoctorId?: string;
   validatedByDoctorName?: string;
   doctorDiagnosis?: DiseaseType;
@@ -238,6 +240,21 @@ export interface XrayAnalysisResponse {
   patientNotes?: string;
   uploadedAt: string;
   analyzedAt?: string;
+}
+
+export interface GradcamRequest {
+  targetClass: string;
+  alpha?: number;
+  threshold?: number;
+  colormap?: string;
+}
+
+export interface GradcamResponse {
+  heatmapB64: string;
+  overlayB64: string;
+  activePercent: number;
+  targetClass: string;
+  modelUsed: string;
 }
 
 export interface DoctorValidationRequest {

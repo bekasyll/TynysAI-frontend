@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import i18n from '../i18n';
 import { keycloak } from '../lib/keycloak';
 import { useAuthStore } from '../store/auth.store';
 import { notifyToast } from '../components/ui/Toast';
@@ -51,8 +52,8 @@ apiClient.interceptors.response.use(
     // their own inline error UI also see the message - duplication is fine and
     // less confusing than silent failures.
     if (error.response?.status === 403) {
-      const data = error.response.data as { message?: string } | undefined;
-      notifyToast(data?.message ?? 'Access denied', 'error');
+      const msg = i18n.t('patients.forbidden_title') + '. ' + i18n.t('patients.forbidden_hint');
+      notifyToast(msg, 'error');
     }
 
     return Promise.reject(error);

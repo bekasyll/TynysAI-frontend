@@ -4,6 +4,7 @@ import { Upload } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { xraysApi } from '../../api/xrays.api';
 import { doctorsApi } from '../../api/doctors.api';
 import Button from '../../components/ui/Button';
@@ -15,7 +16,14 @@ import { getApiError } from '../../lib/api-error';
 interface FormData {
   notes: string;
   doctorId: string;
+  lang: string;
 }
+
+const LANG_OPTIONS = [
+  { value: 'ru', label: 'Русский' },
+  { value: 'kk', label: 'Қазақша' },
+  { value: 'en', label: 'English' },
+];
 
 export default function UploadAnalysisPage() {
   const navigate = useNavigate();
@@ -23,7 +31,7 @@ export default function UploadAnalysisPage() {
   const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const { register, handleSubmit, formState: { isSubmitting, errors } } = useForm<FormData>({
-    defaultValues: { doctorId: '' },
+    defaultValues: { doctorId: '', lang: i18n.language },
   });
 
   const { data: doctorsData } = useQuery({
@@ -34,7 +42,7 @@ export default function UploadAnalysisPage() {
   async function onSubmit(data: FormData) {
     if (!file) { error(t('upload.no_file')); return; }
     try {
-      const res = await xraysApi.patientUpload(file, data.notes || undefined, data.doctorId || undefined);
+      const res = await xraysApi.patientUpload(file, data.notes || undefined, data.doctorId || undefined, data.lang);
       const id = res.data.data!.id;
       success(t('upload.success'));
       navigate(`/patient/analyses/${id}`);
@@ -87,6 +95,15 @@ export default function UploadAnalysisPage() {
               </select>
               {errors.doctorId && <p className="form-error">{errors.doctorId.message}</p>}
               <p className="text-xs text-gray-400 mt-1">{t('upload.assign_doctor_hint')}</p>
+            </div>
+            <div>
+              <label className="form-label">{t('upload.result_language')}</label>
+              <select className="form-input" {...register('lang')}>
+                {LANG_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">{t('upload.result_language_hint')}</p>
             </div>
             <div>
               <label className="form-label">{t('upload.notes')}</label>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Brain } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { xraysApi } from '../../api/xrays.api';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
@@ -25,7 +26,7 @@ export default function DoctorSelfAnalysisPage() {
   async function onSubmit(data: FormData) {
     if (!file) { error(t('upload.no_file')); return; }
     try {
-      const res = await xraysApi.doctorUpload(file, data.notes || undefined);
+      const res = await xraysApi.doctorUpload(file, data.notes || undefined, i18n.language);
       success(t('upload.success'));
       navigate(`/doctor/analyses/${res.data.data!.id}/validate`);
     } catch (e: unknown) {

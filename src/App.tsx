@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from './store/auth.store';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './components/layout/MainLayout';
@@ -46,6 +47,26 @@ import AllReportsPage from './pages/admin/AllReportsPage';
 // Common
 import NotificationsPage from './pages/common/NotificationsPage';
 
+function UnauthorizedPage() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center max-w-md px-4">
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">403</h1>
+        <p className="text-lg text-gray-700 mb-1">{t('patients.forbidden_title')}</p>
+        <p className="text-gray-500 mb-6">{t('patients.forbidden_hint')}</p>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        >
+          {t('common.back')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function RoleRedirect() {
   const { user, isAuthenticated } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -71,14 +92,7 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/" element={<RoleRedirect />} />
-      <Route path="/unauthorized" element={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">403</h1>
-            <p className="text-gray-500">Access denied</p>
-          </div>
-        </div>
-      } />
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
       {/* Protected layout */}
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>

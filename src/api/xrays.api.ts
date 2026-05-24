@@ -2,6 +2,7 @@ import apiClient from './client';
 import type {
   ApiResponse, PageResponse,
   XrayAnalysisResponse, DoctorValidationRequest,
+  GradcamRequest, GradcamResponse,
   AnalysisStatus, DiseaseType,
 } from '../types';
 
@@ -60,21 +61,25 @@ export const xraysApi = {
   getDoctorOne: (id: number | string) =>
     apiClient.get<ApiResponse<XrayAnalysisResponse>>(`/xrays/doctor/${id}`),
 
+  getImageUrl: (id: number | string) => `/api/xrays/${id}/image`,
+
   // Upload
-  patientUpload: (file: File, patientNotes?: string, assignedDoctorId?: string) => {
+  patientUpload: (file: File, patientNotes?: string, assignedDoctorId?: string, lang?: string) => {
     const form = new FormData();
     form.append('file', file);
     if (patientNotes) form.append('patientNotes', patientNotes);
     if (assignedDoctorId) form.append('assignedDoctorId', assignedDoctorId);
+    if (lang) form.append('lang', lang);
     return apiClient.post<ApiResponse<XrayAnalysisResponse>>('/xrays/patient/upload', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
 
-  doctorUpload: (file: File, notes?: string) => {
+  doctorUpload: (file: File, notes?: string, lang?: string) => {
     const form = new FormData();
     form.append('file', file);
     if (notes) form.append('notes', notes);
+    if (lang) form.append('lang', lang);
     return apiClient.post<ApiResponse<XrayAnalysisResponse>>('/xrays/doctor/upload', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
@@ -83,6 +88,10 @@ export const xraysApi = {
   // Validate (doctor)
   validate: (id: number | string, data: DoctorValidationRequest) =>
     apiClient.post<ApiResponse<XrayAnalysisResponse>>(`/xrays/${id}/validate`, data),
+
+  // Grad-CAM heatmap
+  getGradcam: (id: number | string, data: GradcamRequest) =>
+    apiClient.post<ApiResponse<GradcamResponse>>(`/xrays/${id}/gradcam`, data),
 
   // Delete (patient)
   remove: (id: number | string) =>
