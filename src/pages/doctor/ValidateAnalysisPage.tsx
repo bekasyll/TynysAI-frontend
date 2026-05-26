@@ -1,13 +1,16 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Brain, UserCheck, CheckCircle, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { xraysApi } from '../../api/xrays.api';
+import apiClient from '../../api/client';
 import { StatusBadge } from '../../components/ui/Badge';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import InteractiveGradcam from '../../components/ui/InteractiveGradcam';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { xrayDetailRefetch } from '../../hooks/useXrayAutoRefresh';
 import { DISEASE_TYPES } from '../../types';
@@ -41,6 +44,22 @@ export default function ValidateAnalysisPage() {
   );
 
   const agreesWithAi = watch('agreesWithAi');
+
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!analysisId) return;
+    let revoke = '';
+    apiClient
+      .get(`/xrays/${analysisId}/image`, { responseType: 'blob' })
+      .then((res) => {
+        const url = URL.createObjectURL(res.data);
+        revoke = url;
+        setImageUrl(url);
+      })
+      .catch(() => setImageUrl(null));
+    return () => { if (revoke) URL.revokeObjectURL(revoke); };
+  }, [analysisId]);
 
   if (isLoading) return <PageSpinner />;
   if (!analysis) return <div className="text-center py-16 text-gray-400">{t('analyses.not_found')}</div>;
@@ -105,6 +124,18 @@ export default function ValidateAnalysisPage() {
           <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-600 whitespace-pre-wrap">{analysis.aiFindings}</div>
         )}
       </Card>
+
+      {analysis.gradcamAvailable && analysis.aiPrimaryDiagnosis && analysis.aiPrimaryDiagnosis !== 'OTHER' && analysisId && (
+        <Card>
+          <InteractiveGradcam
+            analysisId={analysisId}
+            imageUrl={imageUrl}
+            aiPrimaryDiagnosis={analysis.aiPrimaryDiagnosis}
+            aiAllPredictionsJson={analysis.aiAllPredictionsJson}
+            gradcamAvailable={analysis.gradcamAvailable ?? false}
+          />
+        </Card>
+      )}
 
       <Card>
         <div className="flex items-center gap-2 mb-5">

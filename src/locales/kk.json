@@ -281,6 +281,7 @@
     "original_image": "Түпнұсқа",
     "gradcam_title": "Жылу картасы (Grad-CAM)",
     "gradcam_active": "Назар аймағы",
+    "all_predictions": "Барлық класс ықтималдықтары",
     "doctor_conclusion": "Дәрігер қорытындысы",
     "doctor_diagnosis": "Дәрігер диагнозы",
     "doctor_label": "Дәрігер",
@@ -289,6 +290,25 @@
     "processing_sub": "Бірнеше секунд алады. Бет автоматты жаңартылады.",
     "uploaded_at": "Жүктелді",
     "refresh": "Жаңарту"
+  },
+  "gradcam": {
+    "title": "Интерактивті Grad-CAM талдау",
+    "class_label": "Grad-CAM класы",
+    "transparency": "Мөлдірлік",
+    "threshold": "Белсендіру шегі",
+    "colormap": "Түс картасы",
+    "heatmap_label": "Жылу картасы",
+    "overlay_label": "Қабаттасу",
+    "predicted_class": "Болжанған класс",
+    "alt_class": "Балама класс",
+    "active_zone": "Белсенді аймақ",
+    "probabilities": "Ықтималдық таралуы",
+    "predicted": "ЖИ",
+    "cls_COVID19": "COVID-19",
+    "cls_INVALID": "Рентген емес",
+    "cls_NORMAL": "Қалыпты",
+    "cls_PNEUMONIA": "Пневмония",
+    "cls_TUBERCULOSIS": "Туберкулёз"
   },
   "upload": {
     "title": "Сурет жүктеу",

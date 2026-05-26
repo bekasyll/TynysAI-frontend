@@ -1,12 +1,15 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, FileImage, Brain, UserCheck, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { xraysApi } from '../../api/xrays.api';
+import apiClient from '../../api/client';
 import { StatusBadge } from '../../components/ui/Badge';
 import { PageSpinner } from '../../components/ui/Spinner';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import InteractiveGradcam from '../../components/ui/InteractiveGradcam';
 import { format } from 'date-fns';
 import { useDateLocale } from '../../hooks/useDateLocale';
 import { xrayDetailRefetch } from '../../hooks/useXrayAutoRefresh';
@@ -27,6 +30,22 @@ export default function DoctorAnalysisDetailPage() {
     queryFn: async () => { const r = await xraysApi.getDoctorOne(id!); return r.data.data!; },
     refetchInterval: xrayDetailRefetch,
   });
+
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    let revoke = '';
+    apiClient
+      .get(`/xrays/${id}/image`, { responseType: 'blob' })
+      .then((res) => {
+        const url = URL.createObjectURL(res.data);
+        revoke = url;
+        setImageUrl(url);
+      })
+      .catch(() => setImageUrl(null));
+    return () => { if (revoke) URL.revokeObjectURL(revoke); };
+  }, [id]);
 
   if (isLoading) return <PageSpinner />;
   if (!data) return <div className="text-center py-16 text-gray-400">{t('analyses.not_found')}</div>;
@@ -152,6 +171,19 @@ export default function DoctorAnalysisDetailPage() {
               {t('analyses.analyzed_at')}: {format(new Date(data.analyzedAt), 'dd/MM/yyyy, HH:mm', { locale: dateLocale })}
             </p>
           )}
+        </Card>
+      )}
+
+      {/* Interactive Grad-CAM */}
+      {data.gradcamAvailable && data.aiPrimaryDiagnosis && data.aiPrimaryDiagnosis !== 'OTHER' && id && (
+        <Card>
+          <InteractiveGradcam
+            analysisId={id}
+            imageUrl={imageUrl}
+            aiPrimaryDiagnosis={data.aiPrimaryDiagnosis}
+            aiAllPredictionsJson={data.aiAllPredictionsJson}
+            gradcamAvailable={data.gradcamAvailable ?? false}
+          />
         </Card>
       )}
 

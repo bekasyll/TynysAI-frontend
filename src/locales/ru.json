@@ -283,6 +283,7 @@
     "original_image": "Оригинал",
     "gradcam_title": "Тепловая карта (Grad-CAM)",
     "gradcam_active": "Область внимания",
+    "all_predictions": "Вероятности всех классов",
     "doctor_conclusion": "Заключение врача",
     "doctor_diagnosis": "Диагноз врача",
     "doctor_label": "Врач",
@@ -291,6 +292,25 @@
     "processing_sub": "Обычно занимает несколько секунд. Страница обновляется автоматически.",
     "uploaded_at": "Загружен",
     "refresh": "Обновить"
+  },
+  "gradcam": {
+    "title": "Интерактивный Grad-CAM анализ",
+    "class_label": "Класс Grad-CAM",
+    "transparency": "Прозрачность",
+    "threshold": "Порог активации",
+    "colormap": "Цветовая карта",
+    "heatmap_label": "Тепловая карта",
+    "overlay_label": "Наложение",
+    "predicted_class": "Предсказанный класс",
+    "alt_class": "Альтернативный класс",
+    "active_zone": "Активная зона",
+    "probabilities": "Распределение вероятностей",
+    "predicted": "ИИ",
+    "cls_COVID19": "COVID-19",
+    "cls_INVALID": "Не рентген",
+    "cls_NORMAL": "Норма",
+    "cls_PNEUMONIA": "Пневмония",
+    "cls_TUBERCULOSIS": "Туберкулёз"
   },
   "upload": {
     "title": "Загрузить снимок",

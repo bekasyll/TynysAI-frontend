@@ -281,6 +281,7 @@
     "original_image": "Original",
     "gradcam_title": "Heatmap (Grad-CAM)",
     "gradcam_active": "Attention area",
+    "all_predictions": "All class probabilities",
     "doctor_conclusion": "Doctor's Conclusion",
     "doctor_diagnosis": "Doctor's Diagnosis",
     "doctor_label": "Doctor",
@@ -289,6 +290,25 @@
     "processing_sub": "Usually takes a few seconds. Page updates automatically.",
     "uploaded_at": "Uploaded",
     "refresh": "Refresh"
+  },
+  "gradcam": {
+    "title": "Interactive Grad-CAM Analysis",
+    "class_label": "Grad-CAM Class",
+    "transparency": "Transparency",
+    "threshold": "Activation Threshold",
+    "colormap": "Color Map",
+    "heatmap_label": "Heatmap",
+    "overlay_label": "Overlay",
+    "predicted_class": "Predicted Class",
+    "alt_class": "Alternative Class",
+    "active_zone": "Active Zone",
+    "probabilities": "Probability Distribution",
+    "predicted": "AI",
+    "cls_COVID19": "COVID-19",
+    "cls_INVALID": "Not an X-ray",
+    "cls_NORMAL": "Normal",
+    "cls_PNEUMONIA": "Pneumonia",
+    "cls_TUBERCULOSIS": "Tuberculosis"
   },
   "upload": {
     "title": "Upload Scan",

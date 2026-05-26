@@ -13,7 +13,14 @@ import { getApiError } from '../../lib/api-error';
 
 interface FormData {
   notes: string;
+  lang: string;
 }
+
+const LANG_OPTIONS = [
+  { value: 'ru', label: 'Русский' },
+  { value: 'kk', label: 'Қазақша' },
+  { value: 'en', label: 'English' },
+];
 
 export default function DoctorSelfAnalysisPage() {
   const navigate = useNavigate();
@@ -21,12 +28,14 @@ export default function DoctorSelfAnalysisPage() {
   const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
 
-  const { register, handleSubmit, formState: { isSubmitting } } = useForm<FormData>();
+  const { register, handleSubmit, formState: { isSubmitting } } = useForm<FormData>({
+    defaultValues: { lang: i18n.language },
+  });
 
   async function onSubmit(data: FormData) {
     if (!file) { error(t('upload.no_file')); return; }
     try {
-      const res = await xraysApi.doctorUpload(file, data.notes || undefined, i18n.language);
+      const res = await xraysApi.doctorUpload(file, data.notes || undefined, data.lang);
       success(t('upload.success'));
       navigate(`/doctor/analyses/${res.data.data!.id}/validate`);
     } catch (e: unknown) {
@@ -53,6 +62,15 @@ export default function DoctorSelfAnalysisPage() {
 
         <Card>
           <div className="space-y-4">
+            <div>
+              <label className="form-label">{t('upload.result_language')}</label>
+              <select className="form-input" {...register('lang')}>
+                {LANG_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">{t('upload.result_language_hint')}</p>
+            </div>
             <div>
               <label className="form-label">{t('upload.notes')}</label>
               <textarea

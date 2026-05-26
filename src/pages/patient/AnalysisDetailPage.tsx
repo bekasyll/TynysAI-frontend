@@ -7,7 +7,6 @@ import {
   Brain,
   UserCheck,
   RefreshCw,
-  Flame,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { xraysApi } from "../../api/xrays.api";
@@ -16,10 +15,10 @@ import { StatusBadge } from "../../components/ui/Badge";
 import { PageSpinner } from "../../components/ui/Spinner";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
+import InteractiveGradcam from "../../components/ui/InteractiveGradcam";
 import { format } from "date-fns";
 import { useDateLocale } from "../../hooks/useDateLocale";
 import { xrayDetailRefetch } from "../../hooks/useXrayAutoRefresh";
-import type { GradcamResponse } from "../../types";
 
 export default function AnalysisDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -36,8 +35,6 @@ export default function AnalysisDetailPage() {
   });
 
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [gradcam, setGradcam] = useState<GradcamResponse | null>(null);
-  const [gradcamLoading, setGradcamLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -54,18 +51,6 @@ export default function AnalysisDetailPage() {
       if (revoke) URL.revokeObjectURL(revoke);
     };
   }, [id]);
-
-  useEffect(() => {
-    if (!data?.gradcamAvailable || !data.aiPrimaryDiagnosis || !id) return;
-    setGradcamLoading(true);
-    xraysApi
-      .getGradcam(id, {
-        targetClass: mapDiagnosisToClass(data.aiPrimaryDiagnosis),
-      })
-      .then((res) => setGradcam(res.data.data ?? null))
-      .catch(() => setGradcam(null))
-      .finally(() => setGradcamLoading(false));
-  }, [data?.gradcamAvailable, data?.aiPrimaryDiagnosis, id]);
 
   if (isLoading) return <PageSpinner />;
   if (!data)
@@ -128,46 +113,16 @@ export default function AnalysisDetailPage() {
           </div>
         </div>
 
-        {(imageUrl || gradcam) && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {imageUrl && (
-              <div>
-                <p className="text-xs text-gray-500 font-medium mb-2 uppercase tracking-wide">
-                  {t("analyses.original_image")}
-                </p>
-                <img
-                  src={imageUrl}
-                  alt={data.originalFileName}
-                  className="w-full rounded-lg border border-gray-200"
-                />
-              </div>
-            )}
-            {gradcamLoading && (
-              <div className="flex items-center justify-center">
-                <div className="text-center text-gray-400">
-                  <Flame
-                    size={24}
-                    className="mx-auto mb-2 animate-pulse text-orange-400"
-                  />
-                  <p className="text-xs">{t("common.loading")}</p>
-                </div>
-              </div>
-            )}
-            {gradcam && !gradcamLoading && (
-              <div>
-                <p className="text-xs text-gray-500 font-medium mb-2 uppercase tracking-wide flex items-center gap-1">
-                  {t("analyses.gradcam_title")}
-                </p>
-                <img
-                  src={`data:image/jpeg;base64,${gradcam.overlayB64}`}
-                  alt="Grad-CAM"
-                  className="w-full rounded-lg border border-orange-200"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {t("analyses.gradcam_active")}: {gradcam.activePercent}%
-                </p>
-              </div>
-            )}
+        {imageUrl && !data.gradcamAvailable && (
+          <div className="mt-4">
+            <p className="text-xs text-gray-500 font-medium mb-2 uppercase tracking-wide">
+              {t("analyses.original_image")}
+            </p>
+            <img
+              src={imageUrl}
+              alt={data.originalFileName}
+              className="w-full max-w-sm rounded-lg border border-gray-200"
+            />
           </div>
         )}
 
@@ -277,6 +232,18 @@ export default function AnalysisDetailPage() {
         </Card>
       )}
 
+      {data.gradcamAvailable && data.aiPrimaryDiagnosis && data.aiPrimaryDiagnosis !== 'OTHER' && id && (
+        <Card>
+          <InteractiveGradcam
+            analysisId={id}
+            imageUrl={imageUrl}
+            aiPrimaryDiagnosis={data.aiPrimaryDiagnosis}
+            aiAllPredictionsJson={data.aiAllPredictionsJson}
+            gradcamAvailable={data.gradcamAvailable ?? false}
+          />
+        </Card>
+      )}
+
       {data.validatedByDoctorName && (
         <Card>
           <div className="flex items-center gap-2 mb-4">
@@ -328,13 +295,3 @@ export default function AnalysisDetailPage() {
   );
 }
 
-function mapDiagnosisToClass(diagnosis: string): string {
-  const map: Record<string, string> = {
-    BACTERIAL_PNEUMONIA: "PNEUMONIA",
-    VIRAL_PNEUMONIA: "PNEUMONIA",
-    COVID_19: "COVID19",
-    TUBERCULOSIS: "TUBERCULOSIS",
-    NORMAL: "NORMAL",
-  };
-  return map[diagnosis] ?? "NORMAL";
-}
