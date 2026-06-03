@@ -15,6 +15,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import type { UpdateDoctorProfileRequest } from '../../types';
+import { buildProfileUpdate } from '../../lib/forms';
 
 export default function DoctorProfilePage() {
   const { user, updateAvatar } = useAuthStore();
@@ -110,7 +111,13 @@ export default function DoctorProfilePage() {
 
       {tab === 'profile' && (
         <Card>
-          <form onSubmit={profileForm.handleSubmit((d) => profileMutation.mutate(d))} className="space-y-4">
+          <form onSubmit={profileForm.handleSubmit((d) => {
+            // Keep emptied text fields ("") so the backend clears them; omit the
+            // numeric field and the license (empty "" would hit the uniqueness
+            // check) so they stay unchanged instead.
+            const cleaned = buildProfileUpdate(d, ['yearsOfExperience', 'licenseNumber']);
+            profileMutation.mutate(cleaned as UpdateDoctorProfileRequest);
+          })} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="form-label">{t('profile.specialization')}</label>

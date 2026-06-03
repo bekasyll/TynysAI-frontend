@@ -29,6 +29,13 @@ interface AuthState {
   profileReady: boolean;
   refresh: () => void;
   /**
+   * Overlays the display name/email from the DB profile (`/api/users/me`) onto
+   * the store. The JWT only carries the name Keycloak issued at login, so after
+   * the user edits their name we must source it from user-service instead of the
+   * (now stale) token claims.
+   */
+  applyProfile: (profile: { fullName?: string | null; email?: string | null }) => void;
+  /**
    * Idempotent: calls `/api/users/me` so user-service's `getOrProvision` runs.
    * Safe to invoke on every login / refresh - flips `profileReady` once.
    */
@@ -43,16 +50,26 @@ interface AuthState {
   logout: () => Promise<void>;
 }
 
+/** Sidebar/header display name: "Имя Фамилия" only - no middle name. */
+function displayName(firstName?: string | null, lastName?: string | null): string {
+  return [firstName, lastName].map((s) => s?.trim()).filter(Boolean).join(' ');
+}
+
 function snapshotUser(): AuthUser | null {
   const u = currentUserFromToken();
   if (!u) return null;
   const prev = useAuthStore.getState().user;
+  const sameUser = prev?.id === u.id;
   return {
     id: u.id,
-    email: u.email,
-    fullName: u.fullName,
+    email: sameUser ? prev!.email : u.email,
+    // Display name/email come from the DB profile (applyProfile) once loaded.
+    // Preserve them across token refreshes so a stale token - which still holds
+    // the name issued at login - doesn't overwrite a freshly edited one. On the
+    // first snapshot (new user) we fall back to the token claims.
+    fullName: sameUser ? prev!.fullName : u.fullName,
     role: u.role as Role,
-    avatarUrl: prev?.id === u.id ? prev?.avatarUrl : undefined,
+    avatarUrl: sameUser ? prev?.avatarUrl : undefined,
   };
 }
 
@@ -69,11 +86,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   refresh: () => set({ user: snapshotUser(), isAuthenticated: !!keycloak.authenticated }),
 
+  applyProfile: (profile) => set((state) => state.user
+    ? {
+        user: {
+          ...state.user,
+          fullName: profile.fullName?.trim() || state.user.fullName,
+          email: profile.email?.trim() || state.user.email,
+        },
+      }
+    : state),
+
   ensureProfile: async () => {
     if (!keycloak.authenticated) return;
     if (get().profileReady) return;
     try {
-      await apiClient.get('/users/me');
+      const res = await apiClient.get('/users/me');
+      const profile = res?.data?.data as
+        { firstName?: string; lastName?: string; email?: string } | undefined;
+      if (profile) get().applyProfile({
+        fullName: displayName(profile.firstName, profile.lastName),
+        email: profile.email,
+      });
       set({ profileReady: true });
     } catch {
       // Leave profileReady=false: ProtectedRoute keeps the splash and the

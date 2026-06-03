@@ -101,7 +101,8 @@ export interface UserResponse {
 export interface UpdateUserRequest {
   firstName?: string;
   lastName?: string;
-  middleName?: string;
+  // null clears the (optional) middle name; "" is rejected by the backend's @Size.
+  middleName?: string | null;
   phoneNumber?: string;
 }
 

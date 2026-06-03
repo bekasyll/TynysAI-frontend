@@ -19,6 +19,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { GENDER_TYPES, BLOOD_TYPES } from '../../types';
 import type { UpdatePatientProfileRequest } from '../../types';
+import { buildProfileUpdate } from '../../lib/forms';
 
 // date-fns has no Kazakh locale, fall back to Russian (Cyrillic, sensible
 // month names for kk users until date-fns ships kk).
@@ -101,12 +102,10 @@ export default function PatientProfilePage() {
       {tab === 'medical' && (
         <Card>
           <form onSubmit={profileForm.handleSubmit((d) => {
-            const cleaned = Object.fromEntries(
-              Object.entries(d).filter(([, v]) =>
-                v !== '' && v !== null && v !== undefined && !(typeof v === 'number' && Number.isNaN(v))
-              )
-            ) as UpdatePatientProfileRequest;
-            profileMutation.mutate(cleaned);
+            // Keep emptied text fields ("") so the backend clears them; omit only
+            // the date/enum fields where an empty value can't be sent as-is.
+            const cleaned = buildProfileUpdate(d, ['dateOfBirth', 'gender', 'bloodType']);
+            profileMutation.mutate(cleaned as UpdatePatientProfileRequest);
           })} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>

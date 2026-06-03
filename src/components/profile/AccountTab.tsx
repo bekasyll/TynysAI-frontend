@@ -12,7 +12,7 @@ import type { UpdateUserRequest } from '../../types';
 export default function AccountTab({ submitIcon }: { submitIcon: ReactNode }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { refresh } = useAuthStore();
+  const { applyProfile } = useAuthStore();
 
   const { data: meData } = useQuery({
     queryKey: ['me'],
@@ -37,7 +37,9 @@ export default function AccountTab({ submitIcon }: { submitIcon: ReactNode }) {
     (d: UpdateUserRequest) => usersApi.updateMe({
       firstName: d.firstName?.trim() || undefined,
       lastName: d.lastName?.trim() || undefined,
-      middleName: d.middleName?.trim() || undefined,
+      // Send null (not "") to clear the middle name - the backend's @Size(min=1)
+      // rejects empty strings, and null is what tells it to wipe the field.
+      middleName: d.middleName?.trim() || null,
       // Empty strings fail backend's @Pattern; only send when the user
       // actually typed something.
       phoneNumber: d.phoneNumber?.trim() || undefined,
@@ -45,9 +47,15 @@ export default function AccountTab({ submitIcon }: { submitIcon: ReactNode }) {
     {
       successMessage: t('profile.account_updated'),
       errorMessage: t('profile.save_error'),
-      onSuccess: () => {
+      onSuccess: (res) => {
         queryClient.invalidateQueries({ queryKey: ['me'] });
-        refresh();
+        // Source the sidebar/header name from the DB response, not the stale JWT.
+        const updated = res?.data?.data;
+        if (updated) applyProfile({
+          // "Имя Фамилия" only - the backend's fullName includes the middle name.
+          fullName: [updated.firstName, updated.lastName].filter(Boolean).join(' '),
+          email: updated.email,
+        });
       },
     },
   );
